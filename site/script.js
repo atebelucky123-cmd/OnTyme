@@ -2,6 +2,7 @@ import { auth, db, collection, addDoc, doc, updateDoc, serverTimestamp } from '.
 import { estimateRoute, estimateRouteByCoords } from './routing.js';
 import { attachAutocomplete } from './autocomplete.js';
 import { calculateFare, formatNaira } from './pricing.js';
+import { generateAndUploadDocument } from './invoice.js';
 
 var views = {
   home: document.getElementById('view-home'),
@@ -44,7 +45,7 @@ var TRIP_LABELS = {
 
 var DRIVER_WHATSAPP = '2348035191966';
 
-function buildWhatsAppLink(booking) {
+function buildWhatsAppLink(booking, pdfUrl) {
   var fareText = booking.fareLow && booking.fareHigh
     ? formatNaira(booking.fareLow) + ' – ' + formatNaira(booking.fareHigh)
     : 'pending';
@@ -61,6 +62,7 @@ function buildWhatsAppLink(booking) {
     'Payment: ' + booking.paymentMethod,
     'Estimated fare: ' + fareText
   ];
+  if (pdfUrl) lines.push('', 'Full request as PDF: ' + pdfUrl);
   return 'https://wa.me/' + DRIVER_WHATSAPP + '?text=' + encodeURIComponent(lines.join('\n'));
 }
 
@@ -287,9 +289,25 @@ requestForm.addEventListener('submit', async function (e) {
   document.getElementById('refPassengers').textContent = passengers + ' · ' + luggageText;
   document.getElementById('refPayment').textContent = paymentMethod;
   document.getElementById('refFare').textContent = estimate ? (formatNaira(estimate.low) + ' – ' + formatNaira(estimate.high) + ' (estimate — driver confirms final fare)') : 'Pending driver review';
-  document.getElementById('whatsappNotifyBtn').href = buildWhatsAppLink(booking);
+
+  var whatsappBtn = document.getElementById('whatsappNotifyBtn');
+  var bookingWithId = Object.assign({ id: docRef.id }, booking);
+  whatsappBtn.href = buildWhatsAppLink(booking);
 
   showView('confirmed');
+
+  // Attach a link to a nicely formatted PDF of the request instead of
+  // leaving the driver with plain text only. Non-blocking: if it fails or
+  // is slow, the WhatsApp button above already works with the text-only link.
+  var originalLabel = whatsappBtn.textContent;
+  whatsappBtn.textContent = 'Preparing WhatsApp message…';
+  generateAndUploadDocument(bookingWithId, 'invoice').then(function (pdfUrl) {
+    whatsappBtn.href = buildWhatsAppLink(booking, pdfUrl);
+    whatsappBtn.textContent = originalLabel;
+  }).catch(function (err) {
+    console.error('Could not attach a PDF link to the WhatsApp message:', err);
+    whatsappBtn.textContent = originalLabel;
+  });
 });
 
 // ---------- Cancel booking ----------

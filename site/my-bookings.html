@@ -90,6 +90,17 @@
       ? formatNaira(b.agreedFare)
       : (b.fareLow && b.fareHigh ? formatNaira(b.fareLow) + ' – ' + formatNaira(b.fareHigh) : '—');
 
+    var actionsHtml = '<span style="font-size:14px;color:var(--cocoa-500)">Invoice available once confirmed</span>';
+    if (b.status === 'CONFIRMED') {
+      actionsHtml = '<button type="button" class="btn btn-secondary" data-download="invoice">Download invoice</button>';
+    } else if (b.status === 'COMPLETED') {
+      actionsHtml =
+        '<button type="button" class="btn btn-secondary" data-download="invoice">Download invoice</button>' +
+        '<button type="button" class="btn btn-teal" data-download="receipt">Download receipt</button>';
+    } else if (b.status === 'DECLINED' || b.status === 'CANCELLED') {
+      actionsHtml = '<span style="font-size:14px;color:var(--cocoa-500)">No documents for this request</span>';
+    }
+
     card.innerHTML =
       '<div class="booking-card-top">' +
         '<div>' +
@@ -99,28 +110,25 @@
         '</div>' +
         '<span class="status-badge status-' + (b.status || 'REQUESTED') + '">' + (b.status || 'REQUESTED') + '</span>' +
       '</div>' +
-      '<div class="booking-card-actions">' +
-        (b.status === 'CONFIRMED' || b.status === 'COMPLETED'
-          ? '<button type="button" class="btn btn-secondary" data-download-invoice>Download invoice</button>'
-          : '<span style="font-size:14px;color:var(--cocoa-500)">Invoice available once confirmed</span>') +
-      '</div>';
+      '<div class="booking-card-actions">' + actionsHtml + '</div>';
 
-    const downloadBtn = card.querySelector('[data-download-invoice]');
-    if (downloadBtn) {
-      downloadBtn.addEventListener('click', async function () {
-        downloadBtn.disabled = true;
-        downloadBtn.textContent = 'Generating…';
+    card.querySelectorAll('[data-download]').forEach(function (btn) {
+      var kind = btn.getAttribute('data-download');
+      var originalLabel = btn.textContent;
+      btn.addEventListener('click', async function () {
+        btn.disabled = true;
+        btn.textContent = 'Generating…';
         try {
-          const url = await generateAndUploadDocument(b, 'invoice');
+          const url = await generateAndUploadDocument(b, kind);
           window.open(url, '_blank');
-          downloadBtn.textContent = 'Download invoice';
+          btn.textContent = originalLabel;
         } catch (err) {
-          downloadBtn.textContent = 'Failed — retry';
+          btn.textContent = 'Failed — retry';
           console.error(err);
         }
-        downloadBtn.disabled = false;
+        btn.disabled = false;
       });
-    }
+    });
 
     return card;
   }
