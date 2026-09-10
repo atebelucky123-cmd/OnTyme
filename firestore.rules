@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isDriver() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/config/app).data.driverUid == request.auth.uid;
+    }
+
+    // Holds { driverUid, driverName, driverPhone }. Public read so the client
+    // can check "is this signed-in user the driver". Never client-writable —
+    // edit driverUid from the Firebase console once the driver signs up.
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /bookings/{bookingId} {
+      // Guests can request a ride without signing in.
+      allow create: if true;
+      // A customer can read their own bookings; the driver can read all.
+      allow read: if isDriver() ||
+        (isSignedIn() && resource.data.customerUid == request.auth.uid);
+      // Only the driver can confirm/decline/mark paid.
+      allow update: if isDriver() ||
+        // ...except the customer cancelling their own still-pending request.
+        (isSignedIn() && resource.data.customerUid == request.auth.uid &&
+          resource.data.status == 'REQUESTED' &&
+          request.resource.data.status == 'CANCELLED');
+      allow delete: if false;
+    }
+  }
+}

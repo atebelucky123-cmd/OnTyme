@@ -26,7 +26,8 @@
       </nav>
     </div>
     <div class="nav-right">
-      <a href="#" class="my-bookings">My bookings</a>
+      <span data-auth-slot style="display:flex;align-items:center"></span>
+      <a href="my-bookings.html" class="my-bookings">My bookings</a>
       <button class="btn btn-primary" data-open-request>Request a ride</button>
     </div>
     <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
@@ -39,7 +40,8 @@
     <a href="#how-it-works">How it works</a>
     <a href="#driver">Your driver</a>
     <a href="#safety">Safety</a>
-    <a href="#">My bookings</a>
+    <a href="my-bookings.html">My bookings</a>
+    <span data-auth-slot style="display:block;padding:12px 0"></span>
     <button class="btn btn-primary btn-block" data-open-request>Request a ride</button>
   </nav>
 
@@ -134,11 +136,11 @@
 
   <section class="driver-section" id="driver">
     <div class="driver-photo">
-      <img src="assets/driver.jpg" alt="Atebe Edefo, OnTyme driver">
+      <img src="assets/driver.jpg" alt="Atebe Edefo Lucky, OnTyme driver">
     </div>
     <div>
       <div class="eyebrow" style="color:var(--cocoa-300)">Your driver</div>
-      <h2 class="driver-name">Atebe Edefo</h2>
+      <h2 class="driver-name">Atebe Edefo Lucky</h2>
       <p class="driver-bio">An experienced professional driver working across Lagos, with a small base of private customers who book him directly. Every OnTyme trip is driven by him — you know who is coming.</p>
       <div class="spec-grid">
         <div class="spec"><div class="label">Vehicle</div><div class="value">Toyota Corolla · 4 seats</div></div>
@@ -182,7 +184,8 @@
       <a href="#services">Services</a>
       <a href="#how-it-works">Pricing</a>
       <a href="#safety">Safety</a>
-      <a href="tel:+2347061461445">Contact</a>
+      <a href="tel:+2348035191966">Contact</a>
+      <a href="dashboard.html" style="opacity:.6">Driver</a>
     </div>
   </footer>
 
@@ -209,6 +212,16 @@
       </div>
 
       <div class="field-group">
+        <div class="field-row">
+          <div class="field">
+            <label for="customerName">Your name</label>
+            <input id="customerName" name="customerName" type="text" required>
+          </div>
+          <div class="field">
+            <label for="customerPhone">Phone number</label>
+            <input id="customerPhone" name="customerPhone" type="tel" required>
+          </div>
+        </div>
         <div class="field">
           <label for="pickup">Pickup</label>
           <input id="pickup" name="pickup" type="text" value="12 Herbert Macaulay Way, Yaba" required>
@@ -283,17 +296,17 @@
   <div class="booking-header">
     <button class="back-link" data-go-home>← Back</button>
     <span class="brand">OnTyme</span>
-    <span class="step-label">Step 3 of 3 · Confirmed</span>
+    <span class="step-label">Step 3 of 3 · Request sent</span>
   </div>
 
   <div class="confirmed-body">
     <div>
-      <div class="status-pill">Confirmed</div>
-      <h1 id="confirmedHeadline">Your ride is confirmed</h1>
-      <p class="sub">Quote this reference when the driver calls. He will be at the pickup point from the time agreed.</p>
+      <div class="status-pill" style="background:var(--pending-bg);color:var(--pending-fg)">Awaiting driver review</div>
+      <h1 id="confirmedHeadline">Your request has been sent</h1>
+      <p class="sub">The driver reviews every request before it's confirmed. Quote this reference if he calls, and check "My bookings" for updates.</p>
       <div class="confirmed-actions">
-        <a href="tel:+2347061461445" class="btn btn-secondary">Call the driver</a>
-        <button class="btn" style="background:transparent;color:var(--cocoa-500);border:1px solid rgba(46,27,18,.25);padding:15px 26px;font-size:16px;font-weight:600" data-cancel-booking>Cancel booking</button>
+        <a href="my-bookings.html" class="btn btn-secondary">My bookings</a>
+        <button class="btn" style="background:transparent;color:var(--cocoa-500);border:1px solid rgba(46,27,18,.25);padding:15px 26px;font-size:16px;font-weight:600" data-cancel-booking>Cancel request</button>
       </div>
     </div>
     <div class="ref-card">
@@ -303,13 +316,13 @@
         <div class="line"><span class="k">Trip</span><span id="refTrip">Yaba → Victoria Island</span></div>
         <div class="line"><span class="k">Type</span><span id="refType">One-way</span></div>
         <div class="line"><span class="k">Passengers</span><span id="refPassengers">2 · small luggage</span></div>
-        <div class="line"><span class="k">Agreed fare</span><span id="refFare">₦20,000</span></div>
+        <div class="line"><span class="k">Estimated fare</span><span id="refFare">₦20,000</span></div>
         <div class="line"><span class="k">Payment</span><span>Cash or transfer</span></div>
       </div>
       <div class="driver-mini">
-        <div class="avatar"><img src="assets/driver.jpg" alt="Atebe Edefo"></div>
+        <div class="avatar"><img src="assets/driver.jpg" alt="Atebe Edefo Lucky"></div>
         <div>
-          <div class="name">Atebe Edefo</div>
+          <div class="name">Atebe Edefo Lucky</div>
           <div class="vehicle">Toyota Corolla · Lagos</div>
         </div>
       </div>
@@ -317,6 +330,7 @@
   </div>
 </div>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
+<script type="module" src="auth-ui.js"></script>
 </body>
 </html>

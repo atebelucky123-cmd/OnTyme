@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driver dashboard — OnTyme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-left">
+    <a href="index.html" class="logo"><img src="assets/logo.svg" alt="OnTyme"></a>
+    <span style="font-size:15px;color:var(--cocoa-500)">Driver dashboard</span>
+  </div>
+  <div class="nav-right" data-auth-slot></div>
+</header>
+
+<div id="gate" hidden class="driver-gate">
+  <h1>Not authorized</h1>
+  <p id="gateMessage">This dashboard is restricted to the OnTyme driver account. Sign in with the driver's account to continue.</p>
+  <a href="login.html?next=dashboard.html" class="btn btn-primary" style="margin-top:20px;display:inline-block">Sign in</a>
+</div>
+
+<div id="dashboardBody" hidden class="page-shell">
+  <h1>Today's bookings</h1>
+  <p class="sub">Every request comes in here. Confirm with an agreed fare, or decline.</p>
+  <div id="bookingsList"></div>
+  <div id="emptyState" hidden class="empty-state">No bookings yet.</div>
+</div>
+
+<script type="module">
+  import { auth, db, doc, getDoc, collection, getDocs, orderBy, query, updateDoc, serverTimestamp } from './firebase.js';
+  import { generateAndUploadDocument } from './invoice.js';
+  import { formatNaira } from './pricing.js';
+
+  const gate = document.getElementById('gate');
+  const gateMessage = document.getElementById('gateMessage');
+  const body = document.getElementById('dashboardBody');
+  const listEl = document.getElementById('bookingsList');
+  const emptyEl = document.getElementById('emptyState');
+
+  document.addEventListener('ontyme-auth-ready', async function (e) {
+    const user = e.detail.user;
+    if (!user) {
+      gateMessage.textContent = 'Sign in with the driver\'s account to continue.';
+      gate.hidden = false;
+      return;
+    }
+
+    let configSnap;
+    try {
+      configSnap = await getDoc(doc(db, 'config', 'app'));
+    } catch (err) {
+      gateMessage.textContent = 'Could not check driver access: ' + err.message;
+      gate.hidden = false;
+      return;
+    }
+
+    const driverUid = configSnap.exists() ? configSnap.data().driverUid : '';
+    if (!driverUid) {
+      gateMessage.textContent = 'The driver account has not been set up yet — add a driverUid to the config/app document in Firestore once the driver signs up.';
+      gate.hidden = false;
+      return;
+    }
+    if (driverUid !== user.uid) {
+      gateMessage.textContent = 'This account is not the registered driver account.';
+      gate.hidden = false;
+      return;
+    }
+
+    body.hidden = false;
+    loadBookings();
+  });
+
+  async function loadBookings() {
+    listEl.innerHTML = '<div class="empty-state">Loading…</div>';
+    const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      listEl.innerHTML = '';
+      emptyEl.hidden = false;
+      return;
+    }
+    listEl.innerHTML = '';
+    snap.forEach(function (docSnap) {
+      const b = Object.assign({ id: docSnap.id }, docSnap.data());
+      listEl.appendChild(renderCard(b));
+    });
+  }
+
+  function renderCard(b) {
+    const card = document.createElement('div');
+    card.className = 'booking-card';
+    const status = b.status || 'REQUESTED';
+
+    card.innerHTML =
+      '<div class="booking-card-top">' +
+        '<div>' +
+          '<div class="ref">' + (b.bookingRef || b.id) + '</div>' +
+          '<div class="route">' + (b.pickup || '') + ' → ' + (b.destination || '') + '</div>' +
+          '<div class="meta">' +
+            '<span>' + (b.date || '') + ' · ' + (b.time || '') + '</span>' +
+            '<span>' + (b.tripTypeLabel || b.tripType || '') + '</span>' +
+            '<span>' + (b.passengers || '—') + ' pax · ' + (b.luggage || '—') + ' luggage</span>' +
+            '<span>' + (b.customerName || 'Guest') + ' · ' + (b.customerPhone || 'no phone given') + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<span class="status-badge status-' + status + '">' + status + '</span>' +
+      '</div>' +
+      '<div class="booking-card-actions" data-actions></div>';
+
+    const actions = card.querySelector('[data-actions]');
+    buildActions(actions, b, status);
+    return card;
+  }
+
+  function buildActions(actions, b, status) {
+    actions.innerHTML = '';
+
+    if (status === 'REQUESTED') {
+      const wrap = document.createElement('div');
+      wrap.className = 'fare-input-row';
+      wrap.innerHTML =
+        '<input type="number" placeholder="Agreed fare (₦)" data-fare-input value="' + (b.fareHigh || '') + '">' +
+        '<button type="button" class="btn btn-primary" data-confirm>Confirm</button>' +
+        '<button type="button" class="btn" style="background:transparent;color:var(--cocoa-500);border:1px solid rgba(46,27,18,.25);padding:10px 16px;font-size:14px" data-decline>Decline</button>';
+      actions.appendChild(wrap);
+
+      wrap.querySelector('[data-confirm]').addEventListener('click', async function (ev) {
+        const fare = Number(wrap.querySelector('[data-fare-input]').value);
+        if (!fare) { alert('Enter an agreed fare first.'); return; }
+        ev.target.disabled = true;
+        await updateDoc(doc(db, 'bookings', b.id), { status: 'CONFIRMED', agreedFare: fare, confirmedAt: serverTimestamp() });
+        b.status = 'CONFIRMED';
+        b.agreedFare = fare;
+        refreshCard(actions, b);
+      });
+      wrap.querySelector('[data-decline]').addEventListener('click', async function (ev) {
+        ev.target.disabled = true;
+        await updateDoc(doc(db, 'bookings', b.id), { status: 'DECLINED', declinedAt: serverTimestamp() });
+        b.status = 'DECLINED';
+        refreshCard(actions, b);
+      });
+      return;
+    }
+
+    if (status === 'CONFIRMED') {
+      const wrap = document.createElement('div');
+      wrap.style.display = 'flex';
+      wrap.style.gap = '10px';
+      wrap.innerHTML =
+        '<span style="font-size:15px;font-weight:600;color:var(--cocoa-dark);align-self:center">Agreed fare: ' + formatNaira(b.agreedFare || 0) + '</span>' +
+        '<button type="button" class="btn btn-teal" data-mark-paid style="margin-left:auto">Mark paid &amp; generate receipt</button>';
+      actions.appendChild(wrap);
+
+      wrap.querySelector('[data-mark-paid]').addEventListener('click', async function (ev) {
+        ev.target.disabled = true;
+        ev.target.textContent = 'Generating receipt…';
+        await updateDoc(doc(db, 'bookings', b.id), {
+          status: 'COMPLETED', paid: true, paidAt: serverTimestamp(),
+          paidOnLabel: new Date().toLocaleDateString('en-NG')
+        });
+        b.status = 'COMPLETED';
+        b.paid = true;
+        b.paidOnLabel = new Date().toLocaleDateString('en-NG');
+        try {
+          const url = await generateAndUploadDocument(b, 'receipt');
+          window.open(url, '_blank');
+        } catch (err) {
+          console.error(err);
+        }
+        refreshCard(actions, b);
+      });
+      return;
+    }
+
+    if (status === 'COMPLETED') {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-secondary';
+      btn.textContent = 'Download receipt';
+      btn.addEventListener('click', async function () {
+        btn.disabled = true;
+        btn.textContent = 'Generating…';
+        const url = await generateAndUploadDocument(b, 'receipt');
+        window.open(url, '_blank');
+        btn.disabled = false;
+        btn.textContent = 'Download receipt';
+      });
+      actions.appendChild(btn);
+      return;
+    }
+
+    actions.innerHTML = '<span style="font-size:14px;color:var(--cocoa-500)">No further action</span>';
+  }
+
+  function refreshCard(actions, b) {
+    const card = actions.closest('.booking-card');
+    card.querySelector('.status-badge').className = 'status-badge status-' + b.status;
+    card.querySelector('.status-badge').textContent = b.status;
+    buildActions(actions, b, b.status);
+  }
+</script>
+<script type="module" src="auth-ui.js"></script>
+</body>
+</html>

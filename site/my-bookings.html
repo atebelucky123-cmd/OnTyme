@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My bookings — OnTyme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-left">
+    <a href="index.html" class="logo"><img src="assets/logo.svg" alt="OnTyme"></a>
+  </div>
+  <div class="nav-right" data-auth-slot></div>
+</header>
+
+<div class="page-shell">
+  <h1>My bookings</h1>
+  <p class="sub">Everything you've requested with OnTyme, most recent first.</p>
+  <div id="signedOutState" hidden class="empty-state">
+    <p>Sign in to see your booking history.</p>
+    <a href="login.html?next=my-bookings.html" class="btn btn-primary">Sign in</a>
+  </div>
+  <div id="bookingsList"></div>
+  <div id="emptyState" hidden class="empty-state">
+    <p>No bookings yet.</p>
+    <a href="index.html" class="btn btn-primary">Request a ride</a>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db, collection, query, where, orderBy, getDocs } from './firebase.js';
+  import { generateAndUploadDocument } from './invoice.js';
+  import { formatNaira } from './pricing.js';
+
+  const listEl = document.getElementById('bookingsList');
+  const emptyEl = document.getElementById('emptyState');
+  const signedOutEl = document.getElementById('signedOutState');
+
+  document.addEventListener('ontyme-auth-ready', function (e) {
+    const user = e.detail.user;
+    if (!user) {
+      signedOutEl.hidden = false;
+      return;
+    }
+    signedOutEl.hidden = true;
+    loadBookings(user.uid);
+  });
+
+  async function loadBookings(uid) {
+    listEl.innerHTML = '<div class="empty-state">Loading…</div>';
+    const q = query(
+      collection(db, 'bookings'),
+      where('customerUid', '==', uid),
+      orderBy('createdAt', 'desc')
+    );
+    let snap;
+    try {
+      snap = await getDocs(q);
+    } catch (err) {
+      listEl.innerHTML = '<div class="empty-state">Could not load bookings: ' + err.message + '</div>';
+      return;
+    }
+
+    if (snap.empty) {
+      listEl.innerHTML = '';
+      emptyEl.hidden = false;
+      return;
+    }
+
+    listEl.innerHTML = '';
+    snap.forEach(function (docSnap) {
+      const b = Object.assign({ id: docSnap.id }, docSnap.data());
+      listEl.appendChild(renderCard(b));
+    });
+  }
+
+  function renderCard(b) {
+    const card = document.createElement('div');
+    card.className = 'booking-card';
+
+    const fareText = b.agreedFare
+      ? formatNaira(b.agreedFare)
+      : (b.fareLow && b.fareHigh ? formatNaira(b.fareLow) + ' – ' + formatNaira(b.fareHigh) : '—');
+
+    card.innerHTML =
+      '<div class="booking-card-top">' +
+        '<div>' +
+          '<div class="ref">' + (b.bookingRef || b.id) + '</div>' +
+          '<div class="route">' + (b.pickup || '') + ' → ' + (b.destination || '') + '</div>' +
+          '<div class="meta"><span>' + (b.date || '') + ' · ' + (b.time || '') + '</span><span>' + (b.tripTypeLabel || b.tripType || '') + '</span><span>' + fareText + '</span></div>' +
+        '</div>' +
+        '<span class="status-badge status-' + (b.status || 'REQUESTED') + '">' + (b.status || 'REQUESTED') + '</span>' +
+      '</div>' +
+      '<div class="booking-card-actions">' +
+        (b.status === 'CONFIRMED' || b.status === 'COMPLETED'
+          ? '<button type="button" class="btn btn-secondary" data-download-invoice>Download invoice</button>'
+          : '<span style="font-size:14px;color:var(--cocoa-500)">Invoice available once confirmed</span>') +
+      '</div>';
+
+    const downloadBtn = card.querySelector('[data-download-invoice]');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', async function () {
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = 'Generating…';
+        try {
+          const url = await generateAndUploadDocument(b, 'invoice');
+          window.open(url, '_blank');
+          downloadBtn.textContent = 'Download invoice';
+        } catch (err) {
+          downloadBtn.textContent = 'Failed — retry';
+          console.error(err);
+        }
+        downloadBtn.disabled = false;
+      });
+    }
+
+    return card;
+  }
+</script>
+<script type="module" src="auth-ui.js"></script>
+</body>
+</html>
