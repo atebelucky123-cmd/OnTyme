@@ -1,0 +1,33 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+
+# Node / builds (for when Firebase tooling gets added)
+node_modules/
+dist/
+build/
+npm-debug.log*
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*firebase-adminsdk*.json
+serviceAccountKey.json
+
+# Firebase local state
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Vercel local state
+.vercel
+
+# Design-tool export (already extracted into site/assets — not needed in the repo)
+Ontyme.zip

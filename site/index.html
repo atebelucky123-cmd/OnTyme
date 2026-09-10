@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnTyme — Safe. Scheduled. Reliable.</title>
+<meta name="description" content="OnTyme is scheduled private transport in Lagos with one professional driver. See an estimated fare, submit a request, get a confirmed booking reference.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============================= HOME VIEW ============================= -->
+<div id="view-home" class="view active">
+
+  <header class="site-header">
+    <div class="nav-left">
+      <a href="#view-home" class="logo"><img src="assets/logo.svg" alt="OnTyme"></a>
+      <nav class="main-nav">
+        <a href="#services">Services</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#driver">Your driver</a>
+        <a href="#safety">Safety</a>
+      </nav>
+    </div>
+    <div class="nav-right">
+      <a href="#" class="my-bookings">My bookings</a>
+      <button class="btn btn-primary" data-open-request>Request a ride</button>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </header>
+
+  <nav class="mobile-menu" id="mobileMenu">
+    <a href="#services">Services</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="#driver">Your driver</a>
+    <a href="#safety">Safety</a>
+    <a href="#">My bookings</a>
+    <button class="btn btn-primary btn-block" data-open-request>Request a ride</button>
+  </nav>
+
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Lagos · Mainland ↔ Island</div>
+      <h1>Book your ride the day before, not the minute before.</h1>
+      <p class="lead">OnTyme is scheduled private transport with one professional driver. You choose the date and pickup time, see an estimated fare, and get a confirmation with a booking reference. No surge, no stranger every trip.</p>
+      <div class="hero-ctas">
+        <button class="btn btn-primary btn-lg" data-open-request>Request a ride</button>
+        <a href="#how-it-works" class="btn btn-secondary btn-lg">How pricing works</a>
+      </div>
+      <div class="hero-stats">
+        <div><div class="stat-num">4</div><div class="stat-label">passengers max</div></div>
+        <div><div class="stat-num">5 min</div><div class="stat-label">free waiting</div></div>
+        <div><div class="stat-num">1</div><div class="stat-label">driver, every trip</div></div>
+      </div>
+    </div>
+    <div class="art hero-art" role="img" aria-label="Lagos street at dusk"></div>
+  </section>
+
+  <div class="trust-bar">
+    <span>Estimate shown before you submit</span>
+    <span>Every booking reviewed and confirmed by the driver</span>
+    <span>Booking reference for every trip</span>
+    <span>Cash or transfer on completion</span>
+  </div>
+
+  <section class="section" id="services">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Services</div>
+        <h2>Four ways to book</h2>
+      </div>
+      <div class="note">Interstate and overnight trips are not offered. Early-morning pickups must be booked the day before.</div>
+    </div>
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="num">01</div>
+        <div class="path">A → B</div>
+        <div class="title">One-way</div>
+        <p>A single scheduled trip. Pick your date, time and pickup point.</p>
+      </div>
+      <div class="service-card">
+        <div class="num">02</div>
+        <div class="path">A → B → A</div>
+        <div class="title">Round trip</div>
+        <p>Both legs priced together, with the return journey included in the estimate.</p>
+      </div>
+      <div class="service-card">
+        <div class="num">03</div>
+        <div class="path">A → B → wait → C</div>
+        <div class="title">Wait &amp; return</div>
+        <p>For appointments and errands. First 5 minutes free; waiting after that is chargeable.</p>
+      </div>
+      <div class="service-card dark">
+        <div class="num">04</div>
+        <div class="path">MMIA / GAT</div>
+        <div class="title">Airport transfer</div>
+        <p>To or from Lagos airport, scheduled in advance so the pickup is waiting when you land.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="how" id="how-it-works">
+    <div class="wrap section">
+      <div>
+        <div class="eyebrow" style="color:var(--cocoa-300)">How it works</div>
+        <h2>Request. Review. Confirm.</h2>
+        <p class="lead">A booking is a request, not an instant dispatch. That is deliberate: the driver checks availability and the route before anything is agreed.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">01</div>
+          <div><div class="title">You submit a request</div><p>Trip type, pickup, destination, date, time, passengers and luggage. The estimate appears before you send it.</p></div>
+        </div>
+        <div class="step">
+          <div class="n">02</div>
+          <div><div class="title">The driver reviews it</div><p>He may call you about the route, timing or an unusual pickup. First-time bookings are confirmed by phone.</p></div>
+        </div>
+        <div class="step">
+          <div class="n">03</div>
+          <div><div class="title">You get a confirmation</div><p>With a booking reference, the agreed fare and the pickup window. Both of you work from the same record.</p></div>
+        </div>
+        <div class="step">
+          <div class="n">04</div>
+          <div><div class="title">The trip runs as booked</div><p>Extra stops or additional passengers are agreed and re-priced, never added quietly mid-trip.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="driver-section" id="driver">
+    <div class="driver-photo">
+      <img src="assets/driver.jpg" alt="Atebe Edefo, OnTyme driver">
+    </div>
+    <div>
+      <div class="eyebrow" style="color:var(--cocoa-300)">Your driver</div>
+      <h2 class="driver-name">Atebe Edefo</h2>
+      <p class="driver-bio">An experienced professional driver working across Lagos, with a small base of private customers who book him directly. Every OnTyme trip is driven by him — you know who is coming.</p>
+      <div class="spec-grid">
+        <div class="spec"><div class="label">Vehicle</div><div class="value">Toyota Corolla · 4 seats</div></div>
+        <div class="spec"><div class="label">Luggage</div><div class="value">Up to medium bags</div></div>
+        <div class="spec"><div class="label">Coverage</div><div class="value">Lagos, Mainland &amp; Island</div></div>
+        <div class="spec"><div class="label">Payment</div><div class="value">Cash or transfer, on completion</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="safety-wrap" id="safety">
+    <div class="safety-card">
+      <div>
+        <div class="eyebrow">Safety</div>
+        <h2>Procedures, not promises</h2>
+        <p>OnTyme reduces risk. It cannot eliminate it, and it does not claim to.</p>
+      </div>
+      <div class="safety-items">
+        <div><div class="title">Verified first bookings</div><p>New customers give a name and phone number, confirmed by a short call before the first trip.</p></div>
+        <div><div class="title">Recorded trips</div><p>Route, time and reference are stored against the booking for both sides.</p></div>
+        <div><div class="title">No unplanned detours</div><p>Changes to the route or passenger count are agreed before they happen.</p></div>
+        <div><div class="title">The driver may decline</div><p>If a booking feels unsafe, he can refuse or cancel it. That authority is part of the service.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-band">
+    <div>
+      <h2>Where are you going tomorrow?</h2>
+      <p>Send a request today and get your confirmation before the trip.</p>
+    </div>
+    <button class="btn btn-outline-cream btn-lg" data-open-request>Request a ride</button>
+  </div>
+
+  <footer class="site-footer">
+    <div>
+      <div class="foot-logo">OnTyme</div>
+      <div style="margin-top:8px">Scheduled private transport · Lagos</div>
+    </div>
+    <div class="foot-links">
+      <a href="#services">Services</a>
+      <a href="#how-it-works">Pricing</a>
+      <a href="#safety">Safety</a>
+      <a href="tel:+2347061461445">Contact</a>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ============================= REQUEST VIEW ============================= -->
+<div id="view-request" class="view">
+  <div class="booking-header">
+    <button class="back-link" data-go-home>← Back</button>
+    <span class="brand">OnTyme</span>
+    <span class="step-label">Step 2 of 3 · Trip details</span>
+  </div>
+
+  <form class="booking-body" id="requestForm">
+    <div>
+      <h1>Request a ride</h1>
+      <p class="sub">Estimates update as you fill this in. Nothing is booked until the driver confirms.</p>
+
+      <div class="trip-tabs" id="tripTabs">
+        <button type="button" class="trip-tab active" data-trip="oneway">One-way</button>
+        <button type="button" class="trip-tab" data-trip="roundtrip">Round trip</button>
+        <button type="button" class="trip-tab" data-trip="waitreturn">Wait &amp; return</button>
+        <button type="button" class="trip-tab" data-trip="airport">Airport</button>
+      </div>
+
+      <div class="field-group">
+        <div class="field">
+          <label for="pickup">Pickup</label>
+          <input id="pickup" name="pickup" type="text" value="12 Herbert Macaulay Way, Yaba" required>
+        </div>
+        <div class="field">
+          <label for="destination">Destination</label>
+          <input id="destination" name="destination" type="text" value="Adeola Odeku Street, Victoria Island" required>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="date">Date</label>
+            <input id="date" name="date" type="date" required>
+          </div>
+          <div class="field">
+            <label for="time">Pickup time</label>
+            <input id="time" name="time" type="time" value="06:30" required>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Passengers</label>
+            <div class="choice-row" id="passengerChoice">
+              <button type="button" class="choice" data-value="1">1</button>
+              <button type="button" class="choice active" data-value="2">2</button>
+              <button type="button" class="choice" data-value="3">3</button>
+              <button type="button" class="choice" data-value="4">4</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Luggage</label>
+            <div class="choice-row" id="luggageChoice">
+              <button type="button" class="choice" data-value="None">None</button>
+              <button type="button" class="choice active" data-value="Small">Small</button>
+              <button type="button" class="choice" data-value="Medium">Medium</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="submit-row">
+        <button type="submit" class="btn btn-primary btn-lg">Submit request</button>
+        <span class="hint">You will get a reference immediately, and a confirmation once reviewed.</span>
+      </div>
+    </div>
+
+    <div class="side-col">
+      <div class="art map-art" role="img" aria-label="Route map"></div>
+      <div class="fare-card">
+        <div class="label">Estimated fare</div>
+        <div class="amount" id="fareAmount">₦18,500 – ₦22,000</div>
+        <div class="fare-meta" id="fareMeta">
+          <span>21.4 km</span><span>·</span><span>≈ 55 min</span><span>·</span><span>morning traffic</span>
+        </div>
+        <div class="fare-divider"></div>
+        <div class="fare-lines" id="fareLines">
+          <div class="line"><span>Base + distance</span><span>₦15,200</span></div>
+          <div class="line"><span>Time in traffic</span><span>₦2,400</span></div>
+          <div class="line"><span>Tolls</span><span>₦900</span></div>
+          <div class="line free"><span>Waiting (first 5 min)</span><span>Free</span></div>
+        </div>
+      </div>
+      <div class="notice-card">
+        <div class="title">Before you submit</div>
+        The final fare is confirmed by the driver. Early-morning pickups must be booked the day before. Extra stops are re-priced, not added silently. Interstate and overnight trips are not offered.
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- ============================= CONFIRMED VIEW ============================= -->
+<div id="view-confirmed" class="view">
+  <div class="booking-header">
+    <button class="back-link" data-go-home>← Back</button>
+    <span class="brand">OnTyme</span>
+    <span class="step-label">Step 3 of 3 · Confirmed</span>
+  </div>
+
+  <div class="confirmed-body">
+    <div>
+      <div class="status-pill">Confirmed</div>
+      <h1 id="confirmedHeadline">Your ride is confirmed</h1>
+      <p class="sub">Quote this reference when the driver calls. He will be at the pickup point from the time agreed.</p>
+      <div class="confirmed-actions">
+        <a href="tel:+2347061461445" class="btn btn-secondary">Call the driver</a>
+        <button class="btn" style="background:transparent;color:var(--cocoa-500);border:1px solid rgba(46,27,18,.25);padding:15px 26px;font-size:16px;font-weight:600" data-cancel-booking>Cancel booking</button>
+      </div>
+    </div>
+    <div class="ref-card">
+      <div class="label">Booking reference</div>
+      <div class="ref" id="bookingRef">OT-260903-041</div>
+      <div class="ref-lines">
+        <div class="line"><span class="k">Trip</span><span id="refTrip">Yaba → Victoria Island</span></div>
+        <div class="line"><span class="k">Type</span><span id="refType">One-way</span></div>
+        <div class="line"><span class="k">Passengers</span><span id="refPassengers">2 · small luggage</span></div>
+        <div class="line"><span class="k">Agreed fare</span><span id="refFare">₦20,000</span></div>
+        <div class="line"><span class="k">Payment</span><span>Cash or transfer</span></div>
+      </div>
+      <div class="driver-mini">
+        <div class="avatar"><img src="assets/driver.jpg" alt="Atebe Edefo"></div>
+        <div>
+          <div class="name">Atebe Edefo</div>
+          <div class="vehicle">Toyota Corolla · Lagos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
