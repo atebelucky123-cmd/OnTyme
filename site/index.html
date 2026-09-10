@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OnTyme — Safe. Scheduled. Reliable.</title>
 <meta name="description" content="OnTyme is scheduled private transport in Lagos with one professional driver. See an estimated fare, submit a request, get a confirmed booking reference.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -17,7 +18,7 @@
 
   <header class="site-header">
     <div class="nav-left">
-      <a href="#view-home" class="logo"><img src="assets/logo.svg" alt="OnTyme"></a>
+      <a href="#view-home" class="logo"><img src="assets/logo.svg" alt="OnTyme"><span class="tagline">For Busy People.</span></a>
       <nav class="main-nav">
         <a href="#services">Services</a>
         <a href="#how-it-works">How it works</a>
@@ -178,13 +179,14 @@
   <footer class="site-footer">
     <div>
       <div class="foot-logo">OnTyme</div>
+      <div style="margin-top:4px;font-style:italic;color:var(--tan-800)">For Busy People.</div>
       <div style="margin-top:8px">Scheduled private transport · Lagos</div>
     </div>
     <div class="foot-links">
       <a href="#services">Services</a>
       <a href="#how-it-works">Pricing</a>
       <a href="#safety">Safety</a>
-      <a href="tel:+2348035191966">Contact</a>
+      <a href="https://wa.me/2348035191966?text=Hi%2C%20I%20have%20a%20question%20about%20OnTyme." target="_blank" rel="noopener">Contact</a>
       <a href="dashboard.html" style="opacity:.6">Driver</a>
     </div>
   </footer>
@@ -194,7 +196,7 @@
 <!-- ============================= REQUEST VIEW ============================= -->
 <div id="view-request" class="view">
   <div class="booking-header">
-    <button class="back-link" data-go-home>← Back</button>
+    <button class="back-link" data-go-home>Back</button>
     <span class="brand">OnTyme</span>
     <span class="step-label">Step 2 of 3 · Trip details</span>
   </div>
@@ -221,6 +223,10 @@
             <label for="customerPhone">Phone number</label>
             <input id="customerPhone" name="customerPhone" type="tel" required>
           </div>
+        </div>
+        <div class="field">
+          <label for="customerEmail">Email (for your invoice)</label>
+          <input id="customerEmail" name="customerEmail" type="email">
         </div>
         <div class="field">
           <label for="pickup">Pickup</label>
@@ -259,6 +265,13 @@
             </div>
           </div>
         </div>
+        <div class="field">
+          <label>Payment method</label>
+          <div class="choice-row" id="paymentChoice">
+            <button type="button" class="choice active" data-value="Cash">Cash</button>
+            <button type="button" class="choice" data-value="Transfer">Transfer</button>
+          </div>
+        </div>
       </div>
 
       <div class="submit-row">
@@ -294,7 +307,7 @@
 <!-- ============================= CONFIRMED VIEW ============================= -->
 <div id="view-confirmed" class="view">
   <div class="booking-header">
-    <button class="back-link" data-go-home>← Back</button>
+    <button class="back-link" data-go-home>Back</button>
     <span class="brand">OnTyme</span>
     <span class="step-label">Step 3 of 3 · Request sent</span>
   </div>
@@ -305,9 +318,11 @@
       <h1 id="confirmedHeadline">Your request has been sent</h1>
       <p class="sub">The driver reviews every request before it's confirmed. Quote this reference if he calls, and check "My bookings" for updates.</p>
       <div class="confirmed-actions">
+        <a href="#" class="btn btn-teal" id="whatsappNotifyBtn" target="_blank" rel="noopener">Send to driver on WhatsApp</a>
         <a href="my-bookings.html" class="btn btn-secondary">My bookings</a>
         <button class="btn" style="background:transparent;color:var(--cocoa-500);border:1px solid rgba(46,27,18,.25);padding:15px 26px;font-size:16px;font-weight:600" data-cancel-booking>Cancel request</button>
       </div>
+      <p style="font-size:14px;color:var(--cocoa-500);margin-top:10px">The dashboard is the record of your request either way — WhatsApp just gets it in front of the driver faster.</p>
     </div>
     <div class="ref-card">
       <div class="label">Booking reference</div>
@@ -317,7 +332,7 @@
         <div class="line"><span class="k">Type</span><span id="refType">One-way</span></div>
         <div class="line"><span class="k">Passengers</span><span id="refPassengers">2 · small luggage</span></div>
         <div class="line"><span class="k">Estimated fare</span><span id="refFare">₦20,000</span></div>
-        <div class="line"><span class="k">Payment</span><span>Cash or transfer</span></div>
+        <div class="line"><span class="k">Payment</span><span id="refPayment">Cash</span></div>
       </div>
       <div class="driver-mini">
         <div class="avatar"><img src="assets/driver.jpg" alt="Atebe Edefo Lucky"></div>

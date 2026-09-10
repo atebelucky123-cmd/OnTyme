@@ -1,5 +1,6 @@
 import { auth, db, collection, addDoc, doc, updateDoc, serverTimestamp } from './firebase.js';
-import { estimateRoute } from './routing.js';
+import { estimateRoute, estimateRouteByCoords } from './routing.js';
+import { attachAutocomplete } from './autocomplete.js';
 import { calculateFare, formatNaira } from './pricing.js';
 
 var views = {
@@ -41,6 +42,28 @@ var TRIP_LABELS = {
   airport: 'Airport transfer'
 };
 
+var DRIVER_WHATSAPP = '2348035191966';
+
+function buildWhatsAppLink(booking) {
+  var fareText = booking.fareLow && booking.fareHigh
+    ? formatNaira(booking.fareLow) + ' – ' + formatNaira(booking.fareHigh)
+    : 'pending';
+  var lines = [
+    'New OnTyme booking request',
+    'Ref: ' + booking.bookingRef,
+    'Name: ' + booking.customerName,
+    'Phone: ' + booking.customerPhone,
+    'Trip: ' + TRIP_LABELS[booking.tripType],
+    'Pickup: ' + booking.pickup,
+    'Destination: ' + booking.destination,
+    'Date: ' + booking.date + ' at ' + booking.time,
+    'Passengers: ' + booking.passengers + ', Luggage: ' + booking.luggage,
+    'Payment: ' + booking.paymentMethod,
+    'Estimated fare: ' + fareText
+  ];
+  return 'https://wa.me/' + DRIVER_WHATSAPP + '?text=' + encodeURIComponent(lines.join('\n'));
+}
+
 // Fallback numbers shown when a live route can't be calculated
 // (address not found, OpenRouteService rate-limited, offline, etc).
 var FALLBACK_ESTIMATES = {
@@ -59,9 +82,10 @@ var currentBookingId = null;
 function renderFare(result, opts) {
   opts = opts || {};
   document.getElementById('fareAmount').textContent = formatNaira(result.low) + ' – ' + formatNaira(result.high);
+  var routeLabel = opts.fallback ? 'example estimate' : (opts.precise ? 'precise route' : 'live route (pick a suggestion for precision)');
   document.getElementById('fareMeta').innerHTML =
     '<span>' + result.distanceKm + ' km</span><span>·</span><span>≈ ' + result.durationMin + ' min</span><span>·</span><span>' +
-    (opts.fallback ? 'example estimate' : 'live route') + '</span>';
+    routeLabel + '</span>';
   document.getElementById('fareLines').innerHTML =
     '<div class="line"><span>Base fare</span><span>' + formatNaira(result.breakdown.base) + '</span></div>' +
     '<div class="line"><span>Distance</span><span>' + formatNaira(result.breakdown.distance) + '</span></div>' +
@@ -70,6 +94,9 @@ function renderFare(result, opts) {
     '<div class="line free"><span>Waiting (first 5 min)</span><span>Free</span></div>';
 }
 
+var pickupCoords = null;
+var destinationCoords = null;
+
 async function updateFareEstimate() {
   var token = ++fareRequestToken;
   var pickup = document.getElementById('pickup').value.trim();
@@ -77,12 +104,19 @@ async function updateFareEstimate() {
 
   document.getElementById('fareMeta').innerHTML = '<span>Calculating…</span>';
 
-  var distanceKm, durationMin, fallback = false;
+  var distanceKm, durationMin, fallback = false, precise = false;
   try {
-    if (!pickup || !destination) throw new Error('missing address');
-    var route = await estimateRoute(pickup, destination);
-    distanceKm = route.distanceKm;
-    durationMin = route.durationMin;
+    if (pickupCoords && destinationCoords) {
+      var routeByCoords = await estimateRouteByCoords(pickupCoords, destinationCoords);
+      distanceKm = routeByCoords.distanceKm;
+      durationMin = routeByCoords.durationMin;
+      precise = true;
+    } else {
+      if (!pickup || !destination) throw new Error('missing address');
+      var route = await estimateRoute(pickup, destination);
+      distanceKm = route.distanceKm;
+      durationMin = route.durationMin;
+    }
   } catch (err) {
     var fb = FALLBACK_ESTIMATES[currentTrip];
     distanceKm = fb.distanceKm;
@@ -95,7 +129,7 @@ async function updateFareEstimate() {
   var result = calculateFare({ distanceKm: distanceKm, durationMin: durationMin, tripType: currentTrip });
   currentEstimate = result;
   isLiveEstimate = !fallback;
-  renderFare(result, { fallback: fallback });
+  renderFare(result, { fallback: fallback, precise: precise });
 }
 
 var tripTabs = document.querySelectorAll('.trip-tab');
@@ -108,10 +142,23 @@ tripTabs.forEach(function (tab) {
   });
 });
 
-['pickup', 'destination'].forEach(function (id) {
-  var el = document.getElementById(id);
-  if (el) el.addEventListener('blur', updateFareEstimate);
-});
+var pickupInput = document.getElementById('pickup');
+var destinationInput = document.getElementById('destination');
+
+if (pickupInput) {
+  attachAutocomplete(pickupInput, function (coords) {
+    pickupCoords = coords;
+    updateFareEstimate();
+  });
+  pickupInput.addEventListener('blur', function () { setTimeout(updateFareEstimate, 200); });
+}
+if (destinationInput) {
+  attachAutocomplete(destinationInput, function (coords) {
+    destinationCoords = coords;
+    updateFareEstimate();
+  });
+  destinationInput.addEventListener('blur', function () { setTimeout(updateFareEstimate, 200); });
+}
 
 // ---------- Passenger / luggage choice buttons ----------
 function wireChoiceGroup(id) {
@@ -127,6 +174,7 @@ function wireChoiceGroup(id) {
 }
 wireChoiceGroup('passengerChoice');
 wireChoiceGroup('luggageChoice');
+wireChoiceGroup('paymentChoice');
 
 function activeChoiceValue(id, fallback) {
   var group = document.getElementById(id);
@@ -179,12 +227,14 @@ requestForm.addEventListener('submit', async function (e) {
 
   var customerName = document.getElementById('customerName').value.trim();
   var customerPhone = document.getElementById('customerPhone').value.trim();
+  var customerEmail = document.getElementById('customerEmail').value.trim();
   var pickup = document.getElementById('pickup').value.trim();
   var destination = document.getElementById('destination').value.trim();
   var date = document.getElementById('date').value;
   var time = document.getElementById('time').value;
   var passengers = activeChoiceValue('passengerChoice', '2');
   var luggage = activeChoiceValue('luggageChoice', 'Small');
+  var paymentMethod = activeChoiceValue('paymentChoice', 'Cash');
   var bookingRef = generateBookingRef();
   var estimate = currentEstimate;
 
@@ -193,6 +243,7 @@ requestForm.addEventListener('submit', async function (e) {
     customerUid: auth.currentUser ? auth.currentUser.uid : null,
     customerName: customerName,
     customerPhone: customerPhone,
+    customerEmail: customerEmail || null,
     pickup: pickup,
     destination: destination,
     tripType: currentTrip,
@@ -201,10 +252,12 @@ requestForm.addEventListener('submit', async function (e) {
     time: time,
     passengers: passengers,
     luggage: luggage,
+    paymentMethod: paymentMethod,
     distanceKm: estimate ? estimate.distanceKm : null,
     durationMin: estimate ? estimate.durationMin : null,
     fareLow: estimate ? estimate.low : null,
     fareHigh: estimate ? estimate.high : null,
+    breakdown: estimate ? estimate.breakdown : null,
     agreedFare: null,
     status: 'REQUESTED',
     paid: false,
@@ -232,7 +285,9 @@ requestForm.addEventListener('submit', async function (e) {
   document.getElementById('refType').textContent = TRIP_LABELS[currentTrip];
   var luggageText = luggage === 'None' ? 'no luggage' : luggage.toLowerCase() + ' luggage';
   document.getElementById('refPassengers').textContent = passengers + ' · ' + luggageText;
+  document.getElementById('refPayment').textContent = paymentMethod;
   document.getElementById('refFare').textContent = estimate ? (formatNaira(estimate.low) + ' – ' + formatNaira(estimate.high) + ' (estimate — driver confirms final fare)') : 'Pending driver review';
+  document.getElementById('whatsappNotifyBtn').href = buildWhatsAppLink(booking);
 
   showView('confirmed');
 });
