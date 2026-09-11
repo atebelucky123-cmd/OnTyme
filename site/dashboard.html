@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -37,7 +38,7 @@
 
 <script type="module">
   import { auth, db, doc, getDoc, collection, getDocs, orderBy, query, updateDoc, serverTimestamp } from './firebase.js';
-  import { generateAndUploadDocument } from './invoice.js';
+  import { generateAndUploadDocument, emailDocumentLink } from './invoice.js';
   import { formatNaira } from './pricing.js';
 
   const gate = document.getElementById('gate');
@@ -137,9 +138,16 @@
         const fare = Number(wrap.querySelector('[data-fare-input]').value);
         if (!fare) { alert('Enter an agreed fare first.'); return; }
         ev.target.disabled = true;
+        ev.target.textContent = 'Confirming…';
         await updateDoc(doc(db, 'bookings', b.id), { status: 'CONFIRMED', agreedFare: fare, confirmedAt: serverTimestamp() });
         b.status = 'CONFIRMED';
         b.agreedFare = fare;
+        try {
+          const url = await generateAndUploadDocument(b, 'invoice');
+          await emailDocumentLink(b, 'invoice', url);
+        } catch (err) {
+          console.error('Invoice generation/email failed:', err);
+        }
         refreshCard(actions, b);
       });
       wrap.querySelector('[data-decline]').addEventListener('click', async function (ev) {
@@ -173,6 +181,7 @@
         try {
           const url = await generateAndUploadDocument(b, 'receipt');
           window.open(url, '_blank');
+          await emailDocumentLink(b, 'receipt', url);
         } catch (err) {
           console.error(err);
         }

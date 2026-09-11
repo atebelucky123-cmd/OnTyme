@@ -219,9 +219,44 @@ export async function generateAndUploadDocument(booking, kind) {
   return data.publicUrl;
 }
 
-// TODO once EmailJS credentials are available: call emailjs.send(serviceId,
-// templateId, { to_email, download_url, booking_ref }) here, passing the URL
-// returned by generateAndUploadDocument(). Not wired yet — see chat.
-export async function emailDocumentLink(/* booking, kind, downloadUrl */) {
-  console.warn('emailDocumentLink() is not wired up yet — needs EmailJS service/template IDs.');
+// EmailJS free tier doesn't support attachments, so this emails a link to
+// the PDF (already uploaded to Supabase Storage) rather than the file
+// itself. Requires the EmailJS UMD build loaded on the page first:
+//   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+const EMAILJS_PUBLIC_KEY = 'Jv3M9WbYvsxsOmP9O';
+const EMAILJS_SERVICE_ID = 'service_bt9lwzj';
+const EMAILJS_TEMPLATE_ID = 'template_ytqtxi7';
+
+let emailjsReady = false;
+function ensureEmailJsInit() {
+  if (!emailjsReady) {
+    window.emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+    emailjsReady = true;
+  }
+}
+
+// Emails a link to an already-generated invoice/receipt PDF to the
+// customer. Silently does nothing if they didn't give an email at booking
+// time — this is a nice-to-have on top of the WhatsApp notification and the
+// in-app download, not the only way to get the document.
+export async function emailDocumentLink(booking, kind, downloadUrl) {
+  if (!booking.customerEmail) return;
+  ensureEmailJsInit();
+
+  const amount = kind === 'receipt' ? (booking.agreedFare || 0) : (booking.agreedFare || booking.fareHigh || 0);
+
+  await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    to_email: booking.customerEmail,
+    customer_name: booking.customerName || 'there',
+    doc_type: kind === 'receipt' ? 'Receipt' : 'Invoice',
+    booking_ref: booking.bookingRef || booking.id,
+    pickup: booking.pickup || '',
+    destination: booking.destination || '',
+    date: booking.date || '',
+    time: booking.time || '',
+    amount: pdfNaira(amount),
+    download_url: downloadUrl,
+    driver_name: 'Atebe Edefo Lucky',
+    driver_phone: '+234 803 519 1966'
+  });
 }
