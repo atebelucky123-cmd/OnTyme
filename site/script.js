@@ -1,7 +1,7 @@
 import { auth, db, collection, addDoc, doc, updateDoc, serverTimestamp } from './firebase.js';
 import { estimateRoute, estimateRouteByCoords } from './routing.js';
 import { attachAutocomplete } from './autocomplete.js';
-import { calculateFare, formatNaira } from './pricing.js';
+import { calculateFare, formatNaira, isAgreedPricing } from './pricing.js';
 import { generateAndUploadDocument } from './invoice.js';
 
 var views = {
@@ -19,7 +19,10 @@ function showView(name) {
 }
 
 document.querySelectorAll('[data-open-request]').forEach(function (btn) {
-  btn.addEventListener('click', function () { showView('request'); });
+  btn.addEventListener('click', function () {
+    goToStep('where');
+    showView('request');
+  });
 });
 document.querySelectorAll('[data-go-home]').forEach(function (btn) {
   btn.addEventListener('click', function () { showView('home'); });
@@ -35,20 +38,35 @@ if (hamburgerBtn) {
   });
 }
 
-// ---------- Trip type tabs ----------
+// ---------- Trip type catalogue ----------
 var TRIP_LABELS = {
   oneway: 'One-way',
   roundtrip: 'Round trip',
   waitreturn: 'Wait & return',
-  airport: 'Airport transfer'
+  airport: 'Airport transfer',
+  hire: 'Hire (by the hour)'
+};
+var TRIP_PATHS = {
+  oneway: 'A → B',
+  roundtrip: 'A → B → A',
+  waitreturn: 'A → B → wait → C',
+  airport: 'MMIA / GAT',
+  hire: 'Multiple stops'
+};
+var TRIP_DESC = {
+  oneway: 'A single scheduled trip.',
+  roundtrip: 'Both legs priced together.',
+  waitreturn: 'First 5 minutes of waiting free.',
+  airport: 'Scheduled airport pickup or drop-off.',
+  hire: 'Book the driver for a set number of hours. Price agreed directly with him.'
 };
 
 var DRIVER_WHATSAPP = '2348035191966';
 
 function buildWhatsAppLink(booking, pdfUrl) {
-  var fareText = booking.fareLow && booking.fareHigh
-    ? formatNaira(booking.fareLow) + ' – ' + formatNaira(booking.fareHigh)
-    : 'pending';
+  var fareText = isAgreedPricing(booking.tripType)
+    ? 'agreed with driver (' + booking.hireHours + 'h hire)'
+    : (booking.fareLow && booking.fareHigh ? formatNaira(booking.fareLow) + ' – ' + formatNaira(booking.fareHigh) : 'pending');
   var lines = [
     'New OnTyme booking request',
     'Ref: ' + booking.bookingRef,
@@ -62,32 +80,160 @@ function buildWhatsAppLink(booking, pdfUrl) {
     'Payment: ' + booking.paymentMethod,
     'Estimated fare: ' + fareText
   ];
+  if (booking.hireNotes) lines.push('Plan: ' + booking.hireNotes);
   if (pdfUrl) lines.push('', 'Full request as PDF: ' + pdfUrl);
   return 'https://wa.me/' + DRIVER_WHATSAPP + '?text=' + encodeURIComponent(lines.join('\n'));
 }
 
 // Fallback numbers shown when a live route can't be calculated
 // (address not found, OpenRouteService rate-limited, offline, etc).
-var FALLBACK_ESTIMATES = {
-  oneway: { distanceKm: 21.4, durationMin: 55 },
-  roundtrip: { distanceKm: 21.4, durationMin: 55 },
-  waitreturn: { distanceKm: 21.4, durationMin: 55 },
-  airport: { distanceKm: 27, durationMin: 50 }
-};
+var FALLBACK_ESTIMATE = { distanceKm: 21.4, durationMin: 55 };
 
 var currentTrip = 'oneway';
-var currentEstimate = null; // last successful/fallback calculateFare() result
-var isLiveEstimate = false;
-var fareRequestToken = 0;
+var currentEstimate = null; // calculateFare() result for the selected trip type, or null for 'hire'
 var currentBookingId = null;
+var pickupCoords = null;
+var destinationCoords = null;
+var routeInfo = null; // { distanceKm, durationMin, fallback }
+
+// ---------- Step navigation ----------
+var stepEls = {
+  where: document.getElementById('stepWhereTo'),
+  choose: document.getElementById('stepChooseTrip'),
+  details: document.getElementById('requestForm')
+};
+var stepLabels = {
+  where: 'Step 1 of 3 · Where to?',
+  choose: 'Step 2 of 3 · Choose a trip',
+  details: 'Step 3 of 3 · Trip details'
+};
+
+function goToStep(name) {
+  Object.keys(stepEls).forEach(function (key) {
+    stepEls[key].hidden = key !== name;
+  });
+  document.getElementById('requestStepLabel').textContent = stepLabels[name];
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+}
+
+// ---------- Step 1: where to ----------
+var pickupInput = document.getElementById('pickup');
+var destinationInput = document.getElementById('destination');
+var toStep2Btn = document.getElementById('toStep2Btn');
+
+function refreshStep1Button() {
+  toStep2Btn.disabled = !(pickupInput.value.trim() && destinationInput.value.trim());
+}
+
+if (pickupInput) {
+  attachAutocomplete(pickupInput, function (coords) { pickupCoords = coords; refreshStep1Button(); });
+  pickupInput.addEventListener('input', refreshStep1Button);
+}
+if (destinationInput) {
+  attachAutocomplete(destinationInput, function (coords) { destinationCoords = coords; refreshStep1Button(); });
+  destinationInput.addEventListener('input', refreshStep1Button);
+}
+
+function shortPlace(full) {
+  return (full || '').split(',')[0].trim();
+}
+
+toStep2Btn.addEventListener('click', async function () {
+  toStep2Btn.disabled = true;
+  toStep2Btn.textContent = 'Finding options…';
+
+  var pickup = pickupInput.value.trim();
+  var destination = destinationInput.value.trim();
+
+  try {
+    var route;
+    if (pickupCoords && destinationCoords) {
+      route = await estimateRouteByCoords(pickupCoords, destinationCoords);
+    } else {
+      route = await estimateRoute(pickup, destination);
+    }
+    routeInfo = { distanceKm: Math.round(route.distanceKm * 10) / 10, durationMin: Math.round(route.durationMin), fallback: false };
+  } catch (err) {
+    routeInfo = Object.assign({ fallback: true }, FALLBACK_ESTIMATE);
+  }
+
+  toStep2Btn.disabled = false;
+  toStep2Btn.textContent = 'Find trip options';
+
+  document.getElementById('routeSummaryText').textContent =
+    shortPlace(pickup) + ' → ' + shortPlace(destination) +
+    (routeInfo.fallback ? ' (example distances — could not verify this route live)' : ' · ' + routeInfo.distanceKm + ' km · ~' + routeInfo.durationMin + ' min');
+
+  renderRideOptions();
+  goToStep('choose');
+});
+
+document.getElementById('backToStep1Btn').addEventListener('click', function () { goToStep('where'); });
+
+// ---------- Step 2: ride options ----------
+function renderRideOptions() {
+  var container = document.getElementById('rideOptions');
+  container.innerHTML = '';
+
+  ['oneway', 'roundtrip', 'waitreturn', 'airport', 'hire'].forEach(function (tripType) {
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'ride-option';
+    card.setAttribute('data-trip', tripType);
+
+    var priceHtml;
+    if (tripType === 'hire') {
+      priceHtml = '<span class="ride-option-price agreed">Agreed with driver</span>';
+    } else {
+      var result = calculateFare({ distanceKm: routeInfo.distanceKm, durationMin: routeInfo.durationMin, tripType: tripType });
+      priceHtml = '<span class="ride-option-price">' + formatNaira(result.low) + ' – ' + formatNaira(result.high) + '</span>';
+    }
+
+    card.innerHTML =
+      '<span class="ride-option-path">' + TRIP_PATHS[tripType] + '</span>' +
+      '<span class="ride-option-title">' + TRIP_LABELS[tripType] + '</span>' +
+      '<span class="ride-option-desc">' + TRIP_DESC[tripType] + '</span>' +
+      priceHtml;
+
+    card.addEventListener('click', function () { selectTrip(tripType); });
+    container.appendChild(card);
+  });
+}
+
+function selectTrip(tripType) {
+  currentTrip = tripType;
+
+  var fareCard = document.getElementById('fareCard');
+  var agreedFareCard = document.getElementById('agreedFareCard');
+  var hireFieldsRow = document.getElementById('hireFieldsRow');
+
+  if (isAgreedPricing(tripType)) {
+    currentEstimate = null;
+    fareCard.hidden = true;
+    agreedFareCard.hidden = false;
+    hireFieldsRow.hidden = false;
+  } else {
+    currentEstimate = calculateFare({ distanceKm: routeInfo.distanceKm, durationMin: routeInfo.durationMin, tripType: tripType });
+    renderFare(currentEstimate, { fallback: routeInfo.fallback });
+    fareCard.hidden = false;
+    agreedFareCard.hidden = true;
+    hireFieldsRow.hidden = true;
+  }
+
+  document.getElementById('detailsHeading').textContent = TRIP_LABELS[tripType];
+  document.getElementById('routeRecap').innerHTML =
+    '<div class="route-track small"><span class="route-dot pickup"></span><span class="route-connector"></span><span class="route-dot dest"></span></div>' +
+    '<div class="route-recap-text"><div>' + (pickupInput.value.trim() || '—') + '</div><div>' + (destinationInput.value.trim() || '—') + '</div></div>';
+
+  goToStep('details');
+}
 
 function renderFare(result, opts) {
   opts = opts || {};
   document.getElementById('fareAmount').textContent = formatNaira(result.low) + ' – ' + formatNaira(result.high);
-  var routeLabel = opts.fallback ? 'example estimate' : (opts.precise ? 'precise route' : 'live route (pick a suggestion for precision)');
   document.getElementById('fareMeta').innerHTML =
     '<span>' + result.distanceKm + ' km</span><span>·</span><span>≈ ' + result.durationMin + ' min</span><span>·</span><span>' +
-    routeLabel + '</span>';
+    (opts.fallback ? 'example estimate' : 'live route') + '</span>';
   document.getElementById('fareLines').innerHTML =
     '<div class="line"><span>Base fare</span><span>' + formatNaira(result.breakdown.base) + '</span></div>' +
     '<div class="line"><span>Distance</span><span>' + formatNaira(result.breakdown.distance) + '</span></div>' +
@@ -96,73 +242,7 @@ function renderFare(result, opts) {
     '<div class="line free"><span>Waiting (first 5 min)</span><span>Free</span></div>';
 }
 
-var pickupCoords = null;
-var destinationCoords = null;
-
-async function updateFareEstimate() {
-  var token = ++fareRequestToken;
-  var pickup = document.getElementById('pickup').value.trim();
-  var destination = document.getElementById('destination').value.trim();
-
-  document.getElementById('fareMeta').innerHTML = '<span>Calculating…</span>';
-
-  var distanceKm, durationMin, fallback = false, precise = false;
-  try {
-    if (pickupCoords && destinationCoords) {
-      var routeByCoords = await estimateRouteByCoords(pickupCoords, destinationCoords);
-      distanceKm = routeByCoords.distanceKm;
-      durationMin = routeByCoords.durationMin;
-      precise = true;
-    } else {
-      if (!pickup || !destination) throw new Error('missing address');
-      var route = await estimateRoute(pickup, destination);
-      distanceKm = route.distanceKm;
-      durationMin = route.durationMin;
-    }
-  } catch (err) {
-    var fb = FALLBACK_ESTIMATES[currentTrip];
-    distanceKm = fb.distanceKm;
-    durationMin = fb.durationMin;
-    fallback = true;
-  }
-
-  if (token !== fareRequestToken) return; // a newer request superseded this one
-
-  var result = calculateFare({ distanceKm: distanceKm, durationMin: durationMin, tripType: currentTrip });
-  currentEstimate = result;
-  isLiveEstimate = !fallback;
-  renderFare(result, { fallback: fallback, precise: precise });
-}
-
-var tripTabs = document.querySelectorAll('.trip-tab');
-tripTabs.forEach(function (tab) {
-  tab.addEventListener('click', function () {
-    tripTabs.forEach(function (t) { t.classList.remove('active'); });
-    tab.classList.add('active');
-    currentTrip = tab.getAttribute('data-trip');
-    updateFareEstimate();
-  });
-});
-
-var pickupInput = document.getElementById('pickup');
-var destinationInput = document.getElementById('destination');
-
-if (pickupInput) {
-  attachAutocomplete(pickupInput, function (coords) {
-    pickupCoords = coords;
-    updateFareEstimate();
-  });
-  pickupInput.addEventListener('blur', function () { setTimeout(updateFareEstimate, 200); });
-}
-if (destinationInput) {
-  attachAutocomplete(destinationInput, function (coords) {
-    destinationCoords = coords;
-    updateFareEstimate();
-  });
-  destinationInput.addEventListener('blur', function () { setTimeout(updateFareEstimate, 200); });
-}
-
-// ---------- Passenger / luggage choice buttons ----------
+// ---------- Passenger / luggage / payment choice buttons ----------
 function wireChoiceGroup(id) {
   var group = document.getElementById(id);
   if (!group) return;
@@ -201,10 +281,6 @@ function formatDate(dateStr) {
   return days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
 }
 
-function shortPlace(full) {
-  return (full || '').split(',')[0].trim();
-}
-
 function generateBookingRef() {
   var now = new Date();
   var yy = String(now.getFullYear()).slice(2);
@@ -223,20 +299,19 @@ requestForm.addEventListener('submit', async function (e) {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting…';
 
-  if (!currentEstimate) {
-    await updateFareEstimate();
-  }
-
   var customerName = document.getElementById('customerName').value.trim();
   var customerPhone = document.getElementById('customerPhone').value.trim();
   var customerEmail = document.getElementById('customerEmail').value.trim();
-  var pickup = document.getElementById('pickup').value.trim();
-  var destination = document.getElementById('destination').value.trim();
+  var pickup = pickupInput.value.trim();
+  var destination = destinationInput.value.trim();
   var date = document.getElementById('date').value;
   var time = document.getElementById('time').value;
   var passengers = activeChoiceValue('passengerChoice', '2');
   var luggage = activeChoiceValue('luggageChoice', 'Small');
   var paymentMethod = activeChoiceValue('paymentChoice', 'Cash');
+  var isHire = isAgreedPricing(currentTrip);
+  var hireHours = isHire ? Number(document.getElementById('hireHours').value) || null : null;
+  var hireNotes = isHire ? document.getElementById('hireNotes').value.trim() : null;
   var bookingRef = generateBookingRef();
   var estimate = currentEstimate;
 
@@ -255,8 +330,10 @@ requestForm.addEventListener('submit', async function (e) {
     passengers: passengers,
     luggage: luggage,
     paymentMethod: paymentMethod,
-    distanceKm: estimate ? estimate.distanceKm : null,
-    durationMin: estimate ? estimate.durationMin : null,
+    hireHours: hireHours,
+    hireNotes: hireNotes || null,
+    distanceKm: estimate ? estimate.distanceKm : (routeInfo ? routeInfo.distanceKm : null),
+    durationMin: estimate ? estimate.durationMin : (routeInfo ? routeInfo.durationMin : null),
     fareLow: estimate ? estimate.low : null,
     fareHigh: estimate ? estimate.high : null,
     breakdown: estimate ? estimate.breakdown : null,
@@ -288,7 +365,9 @@ requestForm.addEventListener('submit', async function (e) {
   var luggageText = luggage === 'None' ? 'no luggage' : luggage.toLowerCase() + ' luggage';
   document.getElementById('refPassengers').textContent = passengers + ' · ' + luggageText;
   document.getElementById('refPayment').textContent = paymentMethod;
-  document.getElementById('refFare').textContent = estimate ? (formatNaira(estimate.low) + ' – ' + formatNaira(estimate.high) + ' (estimate — driver confirms final fare)') : 'Pending driver review';
+  document.getElementById('refFare').textContent = isHire
+    ? 'Agreed with driver (' + hireHours + 'h hire)'
+    : (estimate ? (formatNaira(estimate.low) + ' – ' + formatNaira(estimate.high) + ' (estimate — driver confirms final fare)') : 'Pending driver review');
 
   var whatsappBtn = document.getElementById('whatsappNotifyBtn');
   var bookingWithId = Object.assign({ id: docRef.id }, booking);
@@ -324,5 +403,3 @@ document.querySelectorAll('[data-cancel-booking]').forEach(function (btn) {
     showView('home');
   });
 });
-
-updateFareEstimate();

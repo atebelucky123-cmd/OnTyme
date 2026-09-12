@@ -200,20 +200,46 @@
   <div class="booking-header">
     <button class="back-link" data-go-home>Back</button>
     <span class="brand">OnTyme</span>
-    <span class="step-label">Step 2 of 3 · Trip details</span>
+    <span class="step-label" id="requestStepLabel">Step 1 of 3 · Where to?</span>
   </div>
 
-  <form class="booking-body" id="requestForm">
-    <div>
-      <h1>Request a ride</h1>
-      <p class="sub">Estimates update as you fill this in. Nothing is booked until the driver confirms.</p>
-
-      <div class="trip-tabs" id="tripTabs">
-        <button type="button" class="trip-tab active" data-trip="oneway">One-way</button>
-        <button type="button" class="trip-tab" data-trip="roundtrip">Round trip</button>
-        <button type="button" class="trip-tab" data-trip="waitreturn">Wait &amp; return</button>
-        <button type="button" class="trip-tab" data-trip="airport">Airport</button>
+  <!-- STEP 1: locations -->
+  <div class="wizard-step" id="stepWhereTo">
+    <div class="wizard-shell">
+      <h1>Where to?</h1>
+      <p class="sub">Enter your pickup and destination — we'll show trip options next.</p>
+      <div class="route-fields">
+        <div class="route-track"><span class="route-dot pickup"></span><span class="route-connector"></span><span class="route-dot dest"></span></div>
+        <div class="route-inputs">
+          <div class="field">
+            <label for="pickup">Pickup</label>
+            <input id="pickup" type="text" placeholder="Enter pickup address" autocomplete="off" required>
+          </div>
+          <div class="field">
+            <label for="destination">Destination</label>
+            <input id="destination" type="text" placeholder="Enter destination" autocomplete="off" required>
+          </div>
+        </div>
       </div>
+      <button type="button" class="btn btn-primary btn-lg btn-block" id="toStep2Btn" disabled>Find trip options</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: ride options -->
+  <div class="wizard-step" id="stepChooseTrip" hidden>
+    <div class="wizard-shell wide">
+      <h1>Choose a trip</h1>
+      <p class="sub" id="routeSummaryText">—</p>
+      <div class="ride-options" id="rideOptions"></div>
+      <button type="button" class="back-link" id="backToStep1Btn" style="margin-top:8px">Edit locations</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: trip details -->
+  <form class="booking-body" id="requestForm" hidden>
+    <div>
+      <h1 id="detailsHeading">Trip details</h1>
+      <p class="sub">Nothing is booked until the driver confirms.</p>
 
       <div class="field-group">
         <div class="field-row">
@@ -230,14 +256,6 @@
           <label for="customerEmail">Email (for your invoice)</label>
           <input id="customerEmail" name="customerEmail" type="email">
         </div>
-        <div class="field">
-          <label for="pickup">Pickup</label>
-          <input id="pickup" name="pickup" type="text" value="12 Herbert Macaulay Way, Yaba" required>
-        </div>
-        <div class="field">
-          <label for="destination">Destination</label>
-          <input id="destination" name="destination" type="text" value="Adeola Odeku Street, Victoria Island" required>
-        </div>
         <div class="field-row">
           <div class="field">
             <label for="date">Date</label>
@@ -246,6 +264,16 @@
           <div class="field">
             <label for="time">Pickup time</label>
             <input id="time" name="time" type="time" value="06:30" required>
+          </div>
+        </div>
+        <div class="field-row" id="hireFieldsRow" hidden>
+          <div class="field">
+            <label for="hireHours">Hours needed</label>
+            <input id="hireHours" name="hireHours" type="number" min="1" max="24" value="4">
+          </div>
+          <div class="field">
+            <label for="hireNotes">Plan / itinerary</label>
+            <input id="hireNotes" name="hireNotes" type="text" placeholder="e.g. airport pickup, then city errands">
           </div>
         </div>
         <div class="field-row">
@@ -283,8 +311,8 @@
     </div>
 
     <div class="side-col">
-      <div class="art map-art" role="img" aria-label="Route map"></div>
-      <div class="fare-card">
+      <div class="route-recap" id="routeRecap"></div>
+      <div class="fare-card" id="fareCard">
         <div class="label">Estimated fare</div>
         <div class="amount" id="fareAmount">₦18,500 – ₦22,000</div>
         <div class="fare-meta" id="fareMeta">
@@ -297,6 +325,11 @@
           <div class="line"><span>Tolls</span><span>₦900</span></div>
           <div class="line free"><span>Waiting (first 5 min)</span><span>Free</span></div>
         </div>
+      </div>
+      <div class="fare-card" id="agreedFareCard" hidden>
+        <div class="label">Fare</div>
+        <div class="amount" style="font-size:26px">Agreed with driver</div>
+        <div class="fare-meta"><span>He'll confirm a price once he reviews your hours and plan.</span></div>
       </div>
       <div class="notice-card">
         <div class="title">Before you submit</div>

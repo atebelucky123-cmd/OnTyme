@@ -14,6 +14,13 @@ export const PRICING = {
   estimateRangeSpread: 0.12
 };
 
+// "Hire" (book the driver for a period of time) has no calculated estimate —
+// price is agreed directly between driver and customer. Callers should check
+// for this before calling calculateFare().
+export function isAgreedPricing(tripType) {
+  return tripType === 'hire';
+}
+
 export function calculateFare({ distanceKm, durationMin, tripType }) {
   let distance = distanceKm;
   let duration = durationMin;

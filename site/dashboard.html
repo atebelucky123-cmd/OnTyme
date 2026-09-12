@@ -32,8 +32,49 @@
 <div id="dashboardBody" hidden class="page-shell">
   <h1>Today's bookings</h1>
   <p class="sub">Every request comes in here. Confirm with an agreed fare, or decline.</p>
+
+  <div class="stat-row" id="statRow"></div>
+
+  <div class="manual-receipt-card">
+    <h2>Generate a receipt manually</h2>
+    <p class="sub">For a walk-in or offline customer who never went through the booking system. This doesn't save a booking record — it just produces a receipt PDF.</p>
+    <form id="manualReceiptForm">
+      <div class="manual-receipt-grid">
+        <div class="field"><label for="mCustomerName">Customer name</label><input id="mCustomerName" type="text" required></div>
+        <div class="field"><label for="mCustomerPhone">Phone</label><input id="mCustomerPhone" type="tel" required></div>
+        <div class="field"><label for="mCustomerEmail">Email (optional — sends the receipt)</label><input id="mCustomerEmail" type="email"></div>
+        <div class="field">
+          <label for="mTripType">Trip type (optional)</label>
+          <select id="mTripType" style="width:100%;background:var(--cream-off);border:1px solid rgba(46,27,18,.16);border-radius:10px;padding:15px 16px;font-size:16px;font-family:inherit;color:var(--cocoa-dark)">
+            <option value="">Not specified</option>
+            <option value="One-way">One-way</option>
+            <option value="Round trip">Round trip</option>
+            <option value="Wait & return">Wait &amp; return</option>
+            <option value="Airport transfer">Airport transfer</option>
+            <option value="Hire (by the hour)">Hire (by the hour)</option>
+          </select>
+        </div>
+        <div class="field field-full"><label for="mPickup">Pickup</label><input id="mPickup" type="text" required></div>
+        <div class="field field-full"><label for="mDestination">Destination</label><input id="mDestination" type="text" required></div>
+        <div class="field"><label for="mDate">Date</label><input id="mDate" type="date" required></div>
+        <div class="field"><label for="mTime">Time</label><input id="mTime" type="time"></div>
+        <div class="field"><label for="mAmount">Amount paid (₦)</label><input id="mAmount" type="number" min="0" required></div>
+        <div class="field">
+          <label>Payment method</label>
+          <div class="choice-row" id="mPaymentChoice">
+            <button type="button" class="choice active" data-value="Cash">Cash</button>
+            <button type="button" class="choice" data-value="Transfer">Transfer</button>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-teal" style="margin-top:20px">Generate receipt</button>
+    </form>
+  </div>
+
+  <div class="status-tabs" id="statusTabs"></div>
+
   <div id="bookingsList"></div>
-  <div id="emptyState" hidden class="empty-state">No bookings yet.</div>
+  <div id="emptyState" hidden class="empty-state">No bookings in this filter.</div>
 </div>
 
 <script type="module">
@@ -46,6 +87,17 @@
   const body = document.getElementById('dashboardBody');
   const listEl = document.getElementById('bookingsList');
   const emptyEl = document.getElementById('emptyState');
+  const statRow = document.getElementById('statRow');
+  const statusTabsEl = document.getElementById('statusTabs');
+
+  let allBookings = [];
+  let activeTab = 'REQUESTED';
+  const TABS = [
+    { key: 'REQUESTED', label: 'Pending' },
+    { key: 'CONFIRMED', label: 'Confirmed' },
+    { key: 'COMPLETED', label: 'Completed' },
+    { key: 'DECLINED', label: 'Declined/Cancelled' }
+  ];
 
   document.addEventListener('ontyme-auth-ready', async function (e) {
     const user = e.detail.user;
@@ -84,14 +136,68 @@
     listEl.innerHTML = '<div class="empty-state">Loading…</div>';
     const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
     const snap = await getDocs(q);
-    if (snap.empty) {
+    allBookings = [];
+    snap.forEach(function (docSnap) {
+      allBookings.push(Object.assign({ id: docSnap.id }, docSnap.data()));
+    });
+    renderStats();
+    renderTabs();
+    renderList();
+  }
+
+  function renderStats() {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCount = allBookings.filter(function (b) { return b.date === today; }).length;
+    const pendingCount = allBookings.filter(function (b) { return (b.status || 'REQUESTED') === 'REQUESTED'; }).length;
+    const completed = allBookings.filter(function (b) { return b.status === 'COMPLETED'; });
+    const earnings = completed.reduce(function (sum, b) { return sum + (Number(b.agreedFare) || 0); }, 0);
+
+    const stats = [
+      { num: todayCount, label: "Today's bookings" },
+      { num: pendingCount, label: 'Awaiting your review' },
+      { num: completed.length, label: 'Completed trips' },
+      { num: formatNaira(earnings), label: 'Total earned (completed)' }
+    ];
+    statRow.innerHTML = stats.map(function (s) {
+      return '<div class="stat-card"><div class="num">' + s.num + '</div><div class="label">' + s.label + '</div></div>';
+    }).join('');
+  }
+
+  function renderTabs() {
+    statusTabsEl.innerHTML = TABS.map(function (t) {
+      var count = allBookings.filter(function (b) {
+        var status = b.status || 'REQUESTED';
+        if (t.key === 'DECLINED') return status === 'DECLINED' || status === 'CANCELLED';
+        return status === t.key;
+      }).length;
+      return '<button type="button" class="status-tab' + (t.key === activeTab ? ' active' : '') + '" data-tab="' + t.key + '">' +
+        t.label + '<span class="count">' + count + '</span></button>';
+    }).join('');
+
+    statusTabsEl.querySelectorAll('.status-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activeTab = btn.getAttribute('data-tab');
+        renderTabs();
+        renderList();
+      });
+    });
+  }
+
+  function renderList() {
+    var filtered = allBookings.filter(function (b) {
+      var status = b.status || 'REQUESTED';
+      if (activeTab === 'DECLINED') return status === 'DECLINED' || status === 'CANCELLED';
+      return status === activeTab;
+    });
+
+    if (!filtered.length) {
       listEl.innerHTML = '';
       emptyEl.hidden = false;
       return;
     }
+    emptyEl.hidden = true;
     listEl.innerHTML = '';
-    snap.forEach(function (docSnap) {
-      const b = Object.assign({ id: docSnap.id }, docSnap.data());
+    filtered.forEach(function (b) {
       listEl.appendChild(renderCard(b));
     });
   }
@@ -105,6 +211,9 @@
       '<div class="booking-card-top">' +
         '<div>' +
           '<div class="ref">' + (b.bookingRef || b.id) + '</div>' +
+          '<div class="card-route-track">' +
+            '<span class="route-dot pickup"></span><span class="route-connector"></span><span class="route-dot dest"></span>' +
+          '</div>' +
           '<div class="route">' + (b.pickup || '') + ' → ' + (b.destination || '') + '</div>' +
           '<div class="meta">' +
             '<span>' + (b.date || '') + ' · ' + (b.time || '') + '</span>' +
@@ -148,13 +257,13 @@
         } catch (err) {
           console.error('Invoice generation/email failed:', err);
         }
-        refreshCard(actions, b);
+        loadBookings();
       });
       wrap.querySelector('[data-decline]').addEventListener('click', async function (ev) {
         ev.target.disabled = true;
         await updateDoc(doc(db, 'bookings', b.id), { status: 'DECLINED', declinedAt: serverTimestamp() });
         b.status = 'DECLINED';
-        refreshCard(actions, b);
+        loadBookings();
       });
       return;
     }
@@ -185,7 +294,7 @@
         } catch (err) {
           console.error(err);
         }
-        refreshCard(actions, b);
+        loadBookings();
       });
       return;
     }
@@ -210,12 +319,59 @@
     actions.innerHTML = '<span style="font-size:14px;color:var(--cocoa-500)">No further action</span>';
   }
 
-  function refreshCard(actions, b) {
-    const card = actions.closest('.booking-card');
-    card.querySelector('.status-badge').className = 'status-badge status-' + b.status;
-    card.querySelector('.status-badge').textContent = b.status;
-    buildActions(actions, b, b.status);
+  // ---------- Manual receipt generator (standalone, no Firestore record) ----------
+  const mPaymentChoice = document.getElementById('mPaymentChoice');
+  mPaymentChoice.querySelectorAll('.choice').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      mPaymentChoice.querySelectorAll('.choice').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
+
+  function generateManualRef() {
+    var now = new Date();
+    var yy = String(now.getFullYear()).slice(2);
+    var mm = String(now.getMonth() + 1).padStart(2, '0');
+    var dd = String(now.getDate()).padStart(2, '0');
+    var n = String(Math.floor(Math.random() * 900) + 100);
+    return 'OT-M-' + yy + mm + dd + '-' + n;
   }
+
+  document.getElementById('manualReceiptForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Generating…';
+
+    const paymentMethod = mPaymentChoice.querySelector('.choice.active').getAttribute('data-value');
+    const manualBooking = {
+      id: 'manual-' + Date.now(),
+      bookingRef: generateManualRef(),
+      customerName: document.getElementById('mCustomerName').value.trim(),
+      customerPhone: document.getElementById('mCustomerPhone').value.trim(),
+      customerEmail: document.getElementById('mCustomerEmail').value.trim() || null,
+      tripTypeLabel: document.getElementById('mTripType').value || null,
+      pickup: document.getElementById('mPickup').value.trim(),
+      destination: document.getElementById('mDestination').value.trim(),
+      date: document.getElementById('mDate').value,
+      time: document.getElementById('mTime').value,
+      agreedFare: Number(document.getElementById('mAmount').value) || 0,
+      paymentMethod: paymentMethod,
+      paidOnLabel: new Date().toLocaleDateString('en-NG')
+    };
+
+    try {
+      const url = await generateAndUploadDocument(manualBooking, 'receipt');
+      window.open(url, '_blank');
+      await emailDocumentLink(manualBooking, 'receipt', url);
+      e.target.reset();
+      mPaymentChoice.querySelectorAll('.choice').forEach(function (b, i) { b.classList.toggle('active', i === 0); });
+    } catch (err) {
+      alert('Could not generate receipt: ' + err.message);
+    }
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Generate receipt';
+  });
 </script>
 <script type="module" src="auth-ui.js"></script>
 </body>

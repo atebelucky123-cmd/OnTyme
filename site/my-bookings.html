@@ -105,6 +105,7 @@
       '<div class="booking-card-top">' +
         '<div>' +
           '<div class="ref">' + (b.bookingRef || b.id) + '</div>' +
+          '<div class="card-route-track"><span class="route-dot pickup"></span><span class="route-connector"></span><span class="route-dot dest"></span></div>' +
           '<div class="route">' + (b.pickup || '') + ' → ' + (b.destination || '') + '</div>' +
           '<div class="meta"><span>' + (b.date || '') + ' · ' + (b.time || '') + '</span><span>' + (b.tripTypeLabel || b.tripType || '') + '</span><span>' + fareText + '</span></div>' +
         '</div>' +
