@@ -698,7 +698,7 @@ button { font-family: inherit; cursor: pointer; }
   .hamburger { display: flex; }
   .hero { grid-template-columns: 1fr; }
   .hero h1 { font-size: 48px; }
-  .hero-art { height: 260px; order: -1; }
+  .hero-art { height: 260px; }
   .services-grid { grid-template-columns: 1fr 1fr; }
   .how .wrap { grid-template-columns: 1fr; }
   .driver-section { grid-template-columns: 1fr; }

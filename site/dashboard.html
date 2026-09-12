@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Driver dashboard — OnTyme</title>
+<title>Driver dashboard · OnTyme</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,12 +37,12 @@
 
   <div class="manual-receipt-card">
     <h2>Generate a receipt manually</h2>
-    <p class="sub">For a walk-in or offline customer who never went through the booking system. This doesn't save a booking record — it just produces a receipt PDF.</p>
+    <p class="sub">For a walk-in or offline customer who never went through the booking system. This doesn't save a booking record. It just produces a receipt PDF.</p>
     <form id="manualReceiptForm">
       <div class="manual-receipt-grid">
         <div class="field"><label for="mCustomerName">Customer name</label><input id="mCustomerName" type="text" required></div>
         <div class="field"><label for="mCustomerPhone">Phone</label><input id="mCustomerPhone" type="tel" required></div>
-        <div class="field"><label for="mCustomerEmail">Email (optional — sends the receipt)</label><input id="mCustomerEmail" type="email"></div>
+        <div class="field"><label for="mCustomerEmail">Email (optional, sends the receipt)</label><input id="mCustomerEmail" type="email"></div>
         <div class="field">
           <label for="mTripType">Trip type (optional)</label>
           <select id="mTripType" style="width:100%;background:var(--cream-off);border:1px solid rgba(46,27,18,.16);border-radius:10px;padding:15px 16px;font-size:16px;font-family:inherit;color:var(--cocoa-dark)">
@@ -118,7 +118,7 @@
 
     const driverUid = configSnap.exists() ? configSnap.data().driverUid : '';
     if (!driverUid) {
-      gateMessage.textContent = 'The driver account has not been set up yet — add a driverUid to the config/app document in Firestore once the driver signs up.';
+      gateMessage.textContent = 'The driver account has not been set up yet. Add a driverUid to the config/app document in Firestore once the driver signs up.';
       gate.hidden = false;
       return;
     }

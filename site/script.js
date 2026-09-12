@@ -25,7 +25,7 @@ document.querySelectorAll('[data-open-request]').forEach(function (btn) {
   });
 });
 document.querySelectorAll('[data-go-home]').forEach(function (btn) {
-  btn.addEventListener('click', function () { showView('home'); });
+  btn.addEventListener('click', function (e) { e.preventDefault(); showView('home'); });
 });
 
 // ---------- Mobile menu ----------
@@ -162,7 +162,7 @@ toStep2Btn.addEventListener('click', async function () {
 
   document.getElementById('routeSummaryText').textContent =
     shortPlace(pickup) + ' → ' + shortPlace(destination) +
-    (routeInfo.fallback ? ' (example distances — could not verify this route live)' : ' · ' + routeInfo.distanceKm + ' km · ~' + routeInfo.durationMin + ' min');
+    (routeInfo.fallback ? ' (example distances, could not verify this route live)' : ' · ' + routeInfo.distanceKm + ' km · ~' + routeInfo.durationMin + ' min');
 
   renderRideOptions();
   goToStep('choose');
@@ -367,7 +367,7 @@ requestForm.addEventListener('submit', async function (e) {
   document.getElementById('refPayment').textContent = paymentMethod;
   document.getElementById('refFare').textContent = isHire
     ? 'Agreed with driver (' + hireHours + 'h hire)'
-    : (estimate ? (formatNaira(estimate.low) + ' – ' + formatNaira(estimate.high) + ' (estimate — driver confirms final fare)') : 'Pending driver review');
+    : (estimate ? (formatNaira(estimate.low) + ' – ' + formatNaira(estimate.high) + ' (estimate, driver confirms final fare)') : 'Pending driver review');
 
   var whatsappBtn = document.getElementById('whatsappNotifyBtn');
   var bookingWithId = Object.assign({ id: docRef.id }, booking);

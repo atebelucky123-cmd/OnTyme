@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OnTyme — Safe. Scheduled. Reliable.</title>
+<title>OnTyme · Safe. Scheduled. Reliable.</title>
 <meta name="description" content="OnTyme is scheduled private transport in Lagos with one professional driver. See an estimated fare, submit a request, get a confirmed booking reference.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,7 +20,7 @@
 
   <header class="site-header">
     <div class="nav-left">
-      <a href="#view-home" class="logo"><img src="assets/logo.svg" alt="OnTyme"><span class="tagline">For Busy People.</span></a>
+      <a href="#view-home" class="logo" data-go-home><img src="assets/logo.svg" alt="OnTyme"><span class="tagline">For Busy People.</span></a>
       <nav class="main-nav">
         <a href="#services">Services</a>
         <a href="#how-it-works">How it works</a>
@@ -144,7 +144,7 @@
     <div>
       <div class="eyebrow" style="color:var(--cocoa-300)">Your driver</div>
       <h2 class="driver-name">Atebe Edefo Lucky</h2>
-      <p class="driver-bio">An experienced professional driver working across Lagos, with a small base of private customers who book him directly. Every OnTyme trip is driven by him — you know who is coming.</p>
+      <p class="driver-bio">An experienced professional driver working across Lagos, with a small base of private customers who book him directly. Every OnTyme trip is driven by him. You know who is coming.</p>
       <div class="spec-grid">
         <div class="spec"><div class="label">Vehicle</div><div class="value">Toyota Corolla · 4 seats</div></div>
         <div class="spec"><div class="label">Luggage</div><div class="value">Up to medium bags</div></div>
@@ -198,8 +198,7 @@
 <!-- ============================= REQUEST VIEW ============================= -->
 <div id="view-request" class="view">
   <div class="booking-header">
-    <button class="back-link" data-go-home>Back</button>
-    <span class="brand">OnTyme</span>
+    <a href="#view-home" class="logo" data-go-home><img src="assets/logo.svg" alt="OnTyme"></a>
     <span class="step-label" id="requestStepLabel">Step 1 of 3 · Where to?</span>
   </div>
 
@@ -207,7 +206,7 @@
   <div class="wizard-step" id="stepWhereTo">
     <div class="wizard-shell">
       <h1>Where to?</h1>
-      <p class="sub">Enter your pickup and destination — we'll show trip options next.</p>
+      <p class="sub">Enter your pickup and destination. We'll show trip options next.</p>
       <div class="route-fields">
         <div class="route-track"><span class="route-dot pickup"></span><span class="route-connector"></span><span class="route-dot dest"></span></div>
         <div class="route-inputs">
@@ -342,8 +341,7 @@
 <!-- ============================= CONFIRMED VIEW ============================= -->
 <div id="view-confirmed" class="view">
   <div class="booking-header">
-    <button class="back-link" data-go-home>Back</button>
-    <span class="brand">OnTyme</span>
+    <a href="#view-home" class="logo" data-go-home><img src="assets/logo.svg" alt="OnTyme"></a>
     <span class="step-label">Step 3 of 3 · Request sent</span>
   </div>
 
@@ -357,7 +355,7 @@
         <a href="my-bookings.html" class="btn btn-secondary">My bookings</a>
         <button class="btn" style="background:transparent;color:var(--cocoa-500);border:1px solid rgba(46,27,18,.25);padding:15px 26px;font-size:16px;font-weight:600" data-cancel-booking>Cancel request</button>
       </div>
-      <p style="font-size:14px;color:var(--cocoa-500);margin-top:10px">The dashboard is the record of your request either way — WhatsApp just gets it in front of the driver faster.</p>
+      <p style="font-size:14px;color:var(--cocoa-500);margin-top:10px">The dashboard is the record of your request either way. WhatsApp just gets it in front of the driver faster.</p>
     </div>
     <div class="ref-card">
       <div class="label">Booking reference</div>
