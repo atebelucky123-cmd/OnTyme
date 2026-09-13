@@ -1,4 +1,4 @@
-import { auth, db, collection, addDoc, doc, updateDoc, serverTimestamp } from './firebase.js';
+import { auth, db, collection, addDoc, doc, getDoc, updateDoc, serverTimestamp } from './firebase.js';
 import { estimateRoute, estimateRouteByCoords } from './routing.js';
 import { attachAutocomplete } from './autocomplete.js';
 import { calculateFare, formatNaira, isAgreedPricing } from './pricing.js';
@@ -403,3 +403,24 @@ document.querySelectorAll('[data-cancel-booking]').forEach(function (btn) {
     showView('home');
   });
 });
+
+// ---------- Driver public profile (headline/bio/vehicle, editable from the dashboard) ----------
+(async function loadDriverProfile() {
+  var nameEl = document.getElementById('driverNameEl');
+  if (!nameEl) return; // this page has no "Your driver" section
+  try {
+    var snap = await getDoc(doc(db, 'config', 'app'));
+    if (!snap.exists()) return;
+    var data = snap.data();
+    if (data.driverName) nameEl.textContent = data.driverName;
+    if (data.driverHeadline) {
+      var headlineEl = document.getElementById('driverHeadlineEl');
+      headlineEl.textContent = data.driverHeadline;
+      headlineEl.hidden = false;
+    }
+    if (data.driverBio) document.getElementById('driverBioEl').textContent = data.driverBio;
+    if (data.driverVehicle) document.getElementById('driverVehicleEl').textContent = data.driverVehicle;
+  } catch (err) {
+    console.error('Could not load driver profile:', err);
+  }
+})();

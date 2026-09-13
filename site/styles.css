@@ -12,6 +12,7 @@
   --cocoa-300: #A87C5B;
   --tan-800: #C9A98D;
   --tan-100: #E6D8C6;
+  --tan-page: #DCCBB4;
   --confirmed-bg: #E3EEEC;
   --confirmed-fg: #155E59;
   --pending-bg: #F6E7CF;
@@ -273,6 +274,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .driver-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
 .driver-name { font-family: var(--serif); font-size: 44px; color: var(--cocoa-dark); margin: 14px 0 0; line-height: 1.1; }
+.driver-headline { font-size: 17px; font-style: italic; color: var(--cocoa-500); margin: 8px 0 0; }
 .driver-bio { font-size: 18px; line-height: 1.65; color: var(--chocolate); margin: 22px 0 0; max-width: 50ch; }
 .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 36px; }
 .spec { border-top: 1px solid rgba(46,27,18,.14); padding-top: 16px; }
@@ -692,65 +694,60 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ==================================================================
    Driver console — deliberately distinct from the customer-facing site.
-   Same brand colors, dark/operational feel instead of the light marketing
-   look, closer to how Uber/Bolt's driver apps read.
+   Warm tan, operational feel (matches the Claude Design driver-app mock)
+   rather than the marketing site's cream, but still a light theme.
    ================================================================== */
 .console-header.site-header {
-  background: var(--cocoa-dark);
-  border-bottom-color: rgba(247,241,231,.1);
+  background: var(--tan-800);
+  border-bottom-color: rgba(46,27,18,.14);
 }
 .console-header .logo img { filter: none; }
-.console-header .logo .tagline { color: var(--tan-800); }
 .console-header .nav-right,
-.console-header [data-auth-slot] { color: var(--cream); }
-.console-chip {
-  font-size: 12px;
+.console-header [data-auth-slot] { color: var(--cocoa-dark); }
+.console-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: .08em;
+  letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--cocoa-dark);
-  background: var(--tan-800);
-  padding: 5px 12px;
-  border-radius: 999px;
 }
 
 .driver-console {
-  background: #1F120B;
-  max-width: none;
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  margin-left: -50vw;
+  background: var(--tan-page);
+  width: 100%;
   padding: 48px 40px 88px;
   min-height: calc(100vh - 73px);
 }
 .driver-console > * { max-width: 1100px; margin-left: auto; margin-right: auto; }
-.driver-console h1 { color: var(--cream); }
-.driver-console .sub { color: var(--tan-800); }
-.driver-console .console-strong { color: var(--cream); font-weight: 600; }
-.driver-console .console-dim { color: var(--tan-800); }
+.driver-console h1 { color: var(--cocoa-dark); }
+.driver-console .sub { color: var(--cocoa-500); }
+.driver-console .console-strong { color: var(--cocoa-dark); font-weight: 600; }
+.driver-console .console-dim { color: var(--cocoa-500); }
 
 .driver-console .stat-card {
-  background: #2E1B12;
+  background: var(--cream-off);
   box-shadow: none;
-  border: 1px solid rgba(247,241,231,.08);
+  border: 1px solid rgba(46,27,18,.1);
 }
-.driver-console .stat-card .num { color: var(--cream); }
-.driver-console .stat-card .label { color: var(--tan-800); }
+.driver-console .stat-card .num { color: var(--cocoa-dark); }
+.driver-console .stat-card .label { color: var(--cocoa-500); }
 
 .driver-console .manual-receipt-card {
-  background: #2E1B12;
+  background: var(--cream-off);
   box-shadow: none;
-  border: 1px solid rgba(247,241,231,.08);
+  border: 1px solid rgba(46,27,18,.1);
 }
-.driver-console .manual-receipt-card h2 { color: var(--cream); }
-.driver-console .manual-receipt-card .sub { color: var(--tan-800); }
-.driver-console .field label { color: var(--tan-800); }
+.driver-console .manual-receipt-card h2 { color: var(--cocoa-dark); }
+.driver-console .manual-receipt-card .sub { color: var(--cocoa-500); }
+.driver-console .field label { color: var(--cocoa-500); }
 .driver-console .field input,
 .driver-console .console-select {
-  background: #1F120B;
-  border-color: rgba(247,241,231,.14);
-  color: var(--cream);
+  background: var(--cream);
+  border-color: rgba(46,27,18,.18);
+  color: var(--cocoa-dark);
 }
 .console-select {
   width: 100%;
@@ -762,25 +759,128 @@ button { font-family: inherit; cursor: pointer; }
   border: 1px solid rgba(46,27,18,.16);
   color: var(--cocoa-dark);
 }
-.driver-console .choice { border-color: rgba(247,241,231,.18); color: var(--tan-800); }
-.driver-console .choice.active { border-color: var(--tan-800); background: rgba(247,241,231,.1); color: var(--cream); }
+.driver-console .choice { border-color: rgba(46,27,18,.2); color: var(--cocoa-500); }
+.driver-console .choice.active { border-color: var(--chocolate); background: var(--cream-200); color: var(--cocoa-dark); }
 
-.driver-console .status-tabs { background: #2E1B12; }
-.driver-console .status-tab { color: var(--tan-800); }
-.driver-console .status-tab.active { background: #1F120B; color: var(--cream); }
+.driver-console .status-tabs { background: var(--cream-200); }
+.driver-console .status-tab { color: var(--cocoa-500); }
+.driver-console .status-tab.active { background: var(--cream-off); color: var(--cocoa-dark); }
 
 .driver-console .booking-card {
-  background: #2E1B12;
+  background: var(--cream-off);
   box-shadow: none;
-  border: 1px solid rgba(247,241,231,.08);
+  border: 1px solid rgba(46,27,18,.1);
 }
-.driver-console .booking-card:hover { box-shadow: none; border-color: rgba(247,241,231,.18); }
-.driver-console .booking-card .ref { color: var(--cream); }
-.driver-console .booking-card .route { color: var(--tan-100); }
-.driver-console .booking-card .meta { color: var(--tan-800); }
-.driver-console .booking-card-actions { border-top-color: rgba(247,241,231,.08); }
-.driver-console .fare-input-row input { background: #1F120B; border-color: rgba(247,241,231,.14); color: var(--cream); }
-.driver-console .empty-state { color: var(--tan-800); }
+.driver-console .booking-card:hover { box-shadow: none; border-color: rgba(46,27,18,.2); }
+.driver-console .booking-card .ref { color: var(--cocoa-dark); }
+.driver-console .booking-card .route { color: var(--chocolate); }
+.driver-console .booking-card .meta { color: var(--cocoa-500); }
+.driver-console .booking-card-actions { border-top-color: rgba(46,27,18,.08); }
+.driver-console .fare-input-row input { background: var(--cream); border-color: rgba(46,27,18,.18); color: var(--cocoa-dark); }
+.driver-console .empty-state { color: var(--cocoa-500); }
+
+/* ---------- Console app-shell: header controls, screens, nav cards ---------- */
+.console-header-right { display: flex; align-items: center; gap: 16px; }
+
+.notif-wrap { position: relative; }
+.notif-bell {
+  position: relative; width: 38px; height: 38px; display: grid; place-items: center;
+  border: 0; background: transparent; padding: 0; cursor: pointer; color: var(--cocoa-dark);
+}
+.notif-badge {
+  position: absolute; top: -2px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px;
+  background: #A63A26; color: var(--cream); border-radius: 999px; font-size: 10px; font-weight: 700;
+  display: grid; place-items: center; border: 2px solid var(--tan-800);
+}
+.notif-dropdown {
+  position: absolute; top: 48px; right: 0; width: 320px; background: var(--cream-off);
+  border: 1px solid rgba(46,27,18,.14); border-radius: 14px; box-shadow: 0 20px 44px -20px rgba(46,27,18,.4);
+  z-index: 50; overflow: hidden;
+}
+.notif-head {
+  padding: 13px 16px; border-bottom: 1px solid rgba(46,27,18,.1); display: flex;
+  justify-content: space-between; font-size: 13px; color: var(--cocoa-dark);
+}
+.notif-head span:last-child { color: var(--cocoa-500); }
+.notif-item {
+  display: block; width: 100%; text-align: left; background: transparent; border: 0;
+  border-bottom: 1px solid rgba(46,27,18,.08); padding: 13px 16px; cursor: pointer;
+}
+.notif-item .name { font-size: 14px; font-weight: 600; color: var(--cocoa-dark); }
+.notif-item .route { font-size: 13px; color: var(--cocoa-500); margin-top: 2px; }
+.notif-item .when { font-size: 12px; color: var(--cocoa-300); margin-top: 4px; }
+.notif-open { display: block; width: 100%; background: transparent; border: 0; padding: 12px; font-size: 13px; font-weight: 600; color: var(--teal); cursor: pointer; }
+.notif-empty { padding: 20px 16px; font-size: 13px; color: var(--cocoa-500); text-align: center; }
+
+.profile-avatar {
+  width: 40px; height: 40px; border-radius: 999px; border: 2px solid var(--cream-off); padding: 0;
+  overflow: hidden; cursor: pointer; background: var(--cream-200);
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.console-shell { max-width: 900px; margin: 0 auto; }
+.console-shell-narrow { max-width: 640px; }
+
+.console-eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--cocoa-300); margin: 0; }
+.console-greeting { font-family: var(--serif); font-size: 40px; font-weight: 400; color: var(--cocoa-dark); margin: 8px 0 4px; line-height: 1.1; }
+.console-h1 { font-family: var(--serif); font-size: 34px; font-weight: 400; color: var(--cocoa-dark); margin: 0 0 4px; }
+.console-h2 { font-family: var(--serif); font-size: 24px; font-weight: 400; color: var(--cocoa-dark); margin: 0 0 6px; }
+
+.console-back {
+  display: inline-flex; align-items: center; gap: 7px; background: transparent; border: 0; padding: 0;
+  font-size: 14px; font-weight: 600; color: var(--cocoa-500); cursor: pointer; margin-bottom: 18px;
+}
+.console-back:hover { color: var(--cocoa-dark); }
+
+.console-nav-cards { display: flex; flex-direction: column; gap: 16px; margin-top: 30px; }
+.console-nav-card {
+  display: flex; align-items: center; gap: 22px; text-align: left; width: 100%;
+  background: var(--cream-off); border: 1px solid rgba(46,27,18,.12); border-radius: 16px;
+  padding: 28px 30px; cursor: pointer; transition: border-color .15s, transform .15s;
+  box-shadow: 0 3px 14px -8px rgba(46,27,18,.25);
+}
+.console-nav-card:hover { border-color: var(--teal); transform: translateY(-2px); }
+.console-nav-icon { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; flex: none; }
+.console-nav-icon.teal-icon { background: var(--teal-tint); color: #155E59; }
+.console-nav-icon.amber-icon { background: #F6E7CF; color: #7A4E14; }
+.console-nav-text { flex: 1; }
+.console-nav-text .title { font-family: var(--serif); font-size: 26px; color: var(--cocoa-dark); line-height: 1.1; }
+.console-nav-text .desc { font-size: 15px; color: var(--cocoa-500); margin-top: 6px; }
+.console-nav-badge { background: #A63A26; color: var(--cream); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; flex: none; }
+.console-nav-chevron { color: var(--cocoa-300); flex: none; }
+
+.console-textarea {
+  width: 100%; background: var(--cream); border: 1px solid rgba(46,27,18,.18); border-radius: 10px;
+  padding: 14px 15px; font-size: 15px; font-family: inherit; color: var(--cocoa-dark); resize: vertical; line-height: 1.55;
+}
+
+.profile-head { display: flex; align-items: center; gap: 22px; margin: 30px 0 28px; }
+.profile-head-photo { width: 88px; height: 88px; border-radius: 999px; object-fit: cover; border: 3px solid var(--cream-off); flex: none; }
+
+.account-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 15px 0; border-top: 1px solid rgba(46,27,18,.1); font-size: 15px; color: var(--cocoa-dark);
+}
+.account-row:first-of-type { border-top: 0; }
+.account-row > span:first-child { color: var(--cocoa-500); }
+
+.link-btn { background: transparent; border: 0; padding: 0; font-size: 15px; color: var(--teal); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.link-btn:hover { color: var(--teal-dark); }
+
+.btn-danger-outline {
+  background: transparent; border: 1px solid rgba(138,46,32,.35); color: #8A2E20;
+  border-radius: 10px; padding: 15px; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.btn-danger-outline:hover { background: #F3DCD8; }
+
+@media (max-width: 640px) {
+  .console-nav-card { padding: 20px; gap: 16px; }
+  .console-nav-icon { width: 46px; height: 46px; }
+  .console-nav-text .title { font-size: 21px; }
+  .profile-head { gap: 16px; }
+  .profile-head-photo { width: 72px; height: 72px; }
+  .notif-dropdown { width: 280px; right: -60px; }
+}
 
 /* Pill-shaped icon+text back button (Uber reference style), used only
    where going back is a genuine, necessary step within a flow. */

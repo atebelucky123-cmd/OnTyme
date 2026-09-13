@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Driver dashboard · OnTyme</title>
+<title>Driver console · OnTyme</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,10 +17,21 @@
 
 <header class="site-header console-header">
   <div class="nav-left">
-    <a href="index.html" class="logo"><img src="assets/logo-tan.svg" alt="OnTyme"><span class="tagline">For Busy People.</span></a>
-    <span class="console-chip">Driver console</span>
+    <a href="#" id="homeLogoLink" class="logo"><img src="assets/logo.svg" alt="OnTyme"></a>
   </div>
-  <div class="nav-right" data-auth-slot></div>
+  <span class="console-title">Driver console</span>
+  <div class="console-header-right" id="consoleHeaderRight" hidden>
+    <div class="notif-wrap">
+      <button type="button" class="notif-bell" id="notifBell" aria-label="Notifications">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+        <span class="notif-badge" id="notifBadge" hidden>0</span>
+      </button>
+      <div class="notif-dropdown" id="notifDropdown" hidden></div>
+    </div>
+    <button type="button" class="profile-avatar" id="profileAvatarBtn" aria-label="Profile">
+      <img src="assets/driver.jpg" alt="">
+    </button>
+  </div>
 </header>
 
 <div id="gate" hidden class="driver-gate">
@@ -29,56 +40,156 @@
   <a href="login.html?next=dashboard.html" class="btn btn-primary" style="margin-top:20px;display:inline-block">Sign in</a>
 </div>
 
-<div id="dashboardBody" hidden class="page-shell driver-console">
-  <h1>Today's bookings</h1>
-  <p class="sub">Every request comes in here. Confirm with an agreed fare, or decline.</p>
+<div id="dashboardBody" hidden class="driver-console">
 
-  <div class="stat-row" id="statRow"></div>
+  <!-- ===================== HOME ===================== -->
+  <div id="view-home" class="console-view">
+    <div class="console-shell">
+      <p class="console-eyebrow" id="homeDateLabel"></p>
+      <h1 class="console-greeting" id="homeGreeting">Good morning.</h1>
+      <p class="sub" id="homeSubline">You have 0 requests waiting on a reply.</p>
 
-  <div class="manual-receipt-card">
-    <h2>Generate a receipt manually</h2>
-    <p class="sub">For a walk-in or offline customer who never went through the booking system. This doesn't save a booking record. It just produces a receipt PDF.</p>
-    <form id="manualReceiptForm">
-      <div class="manual-receipt-grid">
-        <div class="field"><label for="mCustomerName">Customer name</label><input id="mCustomerName" type="text" required></div>
-        <div class="field"><label for="mCustomerPhone">Phone</label><input id="mCustomerPhone" type="tel" required></div>
-        <div class="field"><label for="mCustomerEmail">Email (optional, sends the receipt)</label><input id="mCustomerEmail" type="email"></div>
-        <div class="field">
-          <label for="mTripType">Trip type (optional)</label>
-          <select id="mTripType" class="console-select">
-            <option value="">Not specified</option>
-            <option value="One-way">One-way</option>
-            <option value="Round trip">Round trip</option>
-            <option value="Wait & return">Wait &amp; return</option>
-            <option value="Airport transfer">Airport transfer</option>
-            <option value="Hire (by the hour)">Hire (by the hour)</option>
-          </select>
-        </div>
-        <div class="field field-full"><label for="mPickup">Pickup</label><input id="mPickup" type="text" required></div>
-        <div class="field field-full"><label for="mDestination">Destination</label><input id="mDestination" type="text" required></div>
-        <div class="field"><label for="mDate">Date</label><input id="mDate" type="date" required></div>
-        <div class="field"><label for="mTime">Time</label><input id="mTime" type="time"></div>
-        <div class="field"><label for="mAmount">Amount paid (₦)</label><input id="mAmount" type="number" min="0" required></div>
-        <div class="field">
-          <label>Payment method</label>
-          <div class="choice-row" id="mPaymentChoice">
-            <button type="button" class="choice active" data-value="Cash">Cash</button>
-            <button type="button" class="choice" data-value="Transfer">Transfer</button>
+      <div class="console-nav-cards">
+        <button type="button" class="console-nav-card" data-go="bookings">
+          <div class="console-nav-icon teal-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M8 3v4M16 3v4M3 11h18"></path></svg>
           </div>
-        </div>
+          <div class="console-nav-text">
+            <div class="title">Bookings</div>
+            <div class="desc">Review requests, confirm a fare, or decline.</div>
+          </div>
+          <span class="console-nav-badge" id="homePendingBadge" hidden>0 new</span>
+          <svg class="console-nav-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
+        </button>
+
+        <button type="button" class="console-nav-card" data-go="receipt">
+          <div class="console-nav-icon amber-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9.5 8h5M9.5 12h5"></path></svg>
+          </div>
+          <div class="console-nav-text">
+            <div class="title">Generate receipt</div>
+            <div class="desc">For a walk-in trip that never went through the app.</div>
+          </div>
+          <svg class="console-nav-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
+        </button>
       </div>
-      <button type="submit" class="btn btn-teal" style="margin-top:20px">Generate receipt</button>
-    </form>
+    </div>
   </div>
 
-  <div class="status-tabs" id="statusTabs"></div>
+  <!-- ===================== BOOKINGS ===================== -->
+  <div id="view-bookings" class="console-view" hidden>
+    <div class="console-shell">
+      <button type="button" class="console-back" data-go="home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg>Home
+      </button>
+      <h1 class="console-h1">Bookings</h1>
+      <p class="sub">Confirm with an agreed fare, or decline.</p>
 
-  <div id="bookingsList"></div>
-  <div id="emptyState" hidden class="empty-state">No bookings in this filter.</div>
+      <div class="status-tabs" id="statusTabs"></div>
+
+      <div id="bookingsList"></div>
+      <div id="emptyState" hidden class="empty-state">No bookings in this filter.</div>
+    </div>
+  </div>
+
+  <!-- ===================== RECEIPT ===================== -->
+  <div id="view-receipt" class="console-view" hidden>
+    <div class="console-shell console-shell-narrow">
+      <button type="button" class="console-back" data-go="home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg>Home
+      </button>
+      <h1 class="console-h1">Generate receipt</h1>
+      <p class="sub">For a walk-in or offline customer who never went through the booking system. No booking record is saved — this just produces a receipt PDF.</p>
+
+      <div class="manual-receipt-card">
+        <form id="manualReceiptForm">
+          <div class="manual-receipt-grid">
+            <div class="field"><label for="mCustomerName">Customer name</label><input id="mCustomerName" type="text" required></div>
+            <div class="field"><label for="mCustomerPhone">Phone</label><input id="mCustomerPhone" type="tel" required></div>
+            <div class="field"><label for="mCustomerEmail">Email (optional, sends the receipt)</label><input id="mCustomerEmail" type="email"></div>
+            <div class="field">
+              <label for="mTripType">Trip type (optional)</label>
+              <select id="mTripType" class="console-select">
+                <option value="">Not specified</option>
+                <option value="One-way">One-way</option>
+                <option value="Round trip">Round trip</option>
+                <option value="Wait & return">Wait &amp; return</option>
+                <option value="Airport transfer">Airport transfer</option>
+                <option value="Hire (by the hour)">Hire (by the hour)</option>
+              </select>
+            </div>
+            <div class="field field-full"><label for="mPickup">Pickup</label><input id="mPickup" type="text" required></div>
+            <div class="field field-full"><label for="mDestination">Destination</label><input id="mDestination" type="text" required></div>
+            <div class="field"><label for="mDate">Date</label><input id="mDate" type="date" required></div>
+            <div class="field"><label for="mTime">Time</label><input id="mTime" type="time"></div>
+            <div class="field"><label for="mAmount">Amount paid (₦)</label><input id="mAmount" type="number" min="0" required></div>
+            <div class="field">
+              <label>Payment method</label>
+              <div class="choice-row" id="mPaymentChoice">
+                <button type="button" class="choice active" data-value="Cash">Cash</button>
+                <button type="button" class="choice" data-value="Transfer">Transfer</button>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-teal" style="margin-top:20px">Generate receipt</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PROFILE ===================== -->
+  <div id="view-profile" class="console-view" hidden>
+    <div class="console-shell console-shell-narrow">
+      <button type="button" class="console-back" data-go="home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg>Home
+      </button>
+
+      <div class="profile-head">
+        <img src="assets/driver.jpg" alt="" class="profile-head-photo">
+        <div>
+          <h1 class="console-h1" id="profileName" style="margin:0">Driver</h1>
+          <p class="sub" id="profileVehicleLine" style="margin-top:4px">Vehicle not set</p>
+        </div>
+      </div>
+
+      <div class="stat-row" id="statRow"></div>
+
+      <div class="manual-receipt-card">
+        <h2 class="console-h2">How you appear on the main site</h2>
+        <p class="sub">This headline and write-up are what customers see on the OnTyme driver page.</p>
+        <form id="profileForm">
+          <div class="field" style="margin-top:18px">
+            <label for="pHeadline">Headline</label>
+            <input id="pHeadline" type="text" placeholder="e.g. Airport runs and full-day charters in Lagos">
+          </div>
+          <div class="field" style="margin-top:14px">
+            <label for="pBio">About you</label>
+            <textarea id="pBio" rows="5" class="console-textarea" placeholder="A few sentences customers will read on the main site." maxlength="400"></textarea>
+          </div>
+          <button type="submit" class="btn btn-teal" style="margin-top:16px">Save changes</button>
+          <span class="console-dim" id="profileSaveStatus" style="margin-left:14px;font-size:14px"></span>
+        </form>
+      </div>
+
+      <div class="manual-receipt-card">
+        <h2 class="console-h2">Account details</h2>
+        <div class="account-row"><span>Name</span><span id="acctName">—</span></div>
+        <div class="account-row"><span>Phone</span><span id="acctPhone">—</span></div>
+        <div class="account-row"><span>Vehicle</span><span><button type="button" class="link-btn" id="editVehicleBtn">—</button></span></div>
+        <div class="account-row"><span>Plate number</span><span><button type="button" class="link-btn" id="editPlateBtn">—</button></span></div>
+        <div class="account-row"><span>Signed in as</span><span data-auth-slot></span></div>
+      </div>
+
+      <button type="button" class="btn btn-danger-outline" id="signOutBtn" style="width:100%;margin-top:4px">Sign out</button>
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
-  import { auth, db, doc, getDoc, collection, getDocs, orderBy, query, updateDoc, serverTimestamp } from './firebase.js';
+  import {
+    auth, db, doc, getDoc, updateDoc, collection, getDocs, orderBy, query, serverTimestamp, signOut
+  } from './firebase.js';
   import { generateAndUploadDocument, emailDocumentLink } from './invoice.js';
   import { formatNaira } from './pricing.js';
 
@@ -92,6 +203,7 @@
 
   let allBookings = [];
   let activeTab = 'REQUESTED';
+  let driverProfile = {};
   const TABS = [
     { key: 'REQUESTED', label: 'Pending' },
     { key: 'CONFIRMED', label: 'Confirmed' },
@@ -99,6 +211,22 @@
     { key: 'DECLINED', label: 'Declined/Cancelled' }
   ];
 
+  // ---------- View routing ----------
+  const VIEWS = ['home', 'bookings', 'receipt', 'profile'];
+  function goView(name) {
+    VIEWS.forEach(function (v) {
+      document.getElementById('view-' + v).hidden = (v !== name);
+    });
+    document.getElementById('notifDropdown').hidden = true;
+    window.scrollTo({ top: 0 });
+  }
+  document.querySelectorAll('[data-go]').forEach(function (el) {
+    el.addEventListener('click', function () { goView(el.getAttribute('data-go')); });
+  });
+  document.getElementById('homeLogoLink').addEventListener('click', function (e) { e.preventDefault(); goView('home'); });
+  document.getElementById('profileAvatarBtn').addEventListener('click', function () { goView('profile'); });
+
+  // ---------- Auth gate ----------
   document.addEventListener('ontyme-auth-ready', async function (e) {
     const user = e.detail.user;
     if (!user) {
@@ -128,10 +256,80 @@
       return;
     }
 
+    driverProfile = configSnap.data();
     body.hidden = false;
+    document.getElementById('consoleHeaderRight').hidden = false;
+    renderHome();
+    renderProfile();
     loadBookings();
   });
 
+  document.getElementById('signOutBtn').addEventListener('click', async function () {
+    await signOut(auth);
+    window.location.href = 'index.html';
+  });
+
+  // ---------- Home ----------
+  function renderHome() {
+    const firstName = (driverProfile.driverName || 'there').split(' ')[0];
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : (hour < 17 ? 'Good afternoon' : 'Good evening');
+    document.getElementById('homeGreeting').textContent = greeting + ', ' + firstName + '.';
+    document.getElementById('homeDateLabel').textContent = new Date().toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
+  function updateHomePendingCount(pendingCount) {
+    document.getElementById('homeSubline').textContent =
+      pendingCount === 0 ? 'No requests waiting on a reply right now.' :
+      'You have ' + pendingCount + ' request' + (pendingCount === 1 ? '' : 's') + ' waiting on a reply.';
+    const badge = document.getElementById('homePendingBadge');
+    if (pendingCount > 0) {
+      badge.hidden = false;
+      badge.textContent = pendingCount + ' new';
+    } else {
+      badge.hidden = true;
+    }
+  }
+
+  // ---------- Notifications ----------
+  function renderNotifications(pendingBookings) {
+    const badge = document.getElementById('notifBadge');
+    if (pendingBookings.length > 0) {
+      badge.hidden = false;
+      badge.textContent = pendingBookings.length;
+    } else {
+      badge.hidden = true;
+    }
+
+    const dropdown = document.getElementById('notifDropdown');
+    if (!pendingBookings.length) {
+      dropdown.innerHTML = '<div class="notif-empty">No new requests.</div>';
+      return;
+    }
+    dropdown.innerHTML =
+      '<div class="notif-head"><span>New requests</span><span>' + pendingBookings.length + ' waiting</span></div>' +
+      pendingBookings.slice(0, 4).map(function (b) {
+        return '<button type="button" class="notif-item" data-go="bookings">' +
+          '<div class="name">' + (b.customerName || 'Guest') + '</div>' +
+          '<div class="route">' + (b.pickup || '') + ' → ' + (b.destination || '') + '</div>' +
+          '<div class="when">' + (b.date || '') + ' · ' + (b.time || '') + '</div>' +
+        '</button>';
+      }).join('') +
+      '<button type="button" class="notif-open" data-go="bookings">Open bookings</button>';
+
+    dropdown.querySelectorAll('[data-go]').forEach(function (el) {
+      el.addEventListener('click', function () { goView('bookings'); activeTab = 'REQUESTED'; renderTabs(); renderList(); });
+    });
+  }
+
+  document.getElementById('notifBell').addEventListener('click', function (e) {
+    e.stopPropagation();
+    const dropdown = document.getElementById('notifDropdown');
+    dropdown.hidden = !dropdown.hidden;
+  });
+  document.addEventListener('click', function () { document.getElementById('notifDropdown').hidden = true; });
+
+  // ---------- Bookings ----------
   async function loadBookings() {
     listEl.innerHTML = '<div class="empty-state">Loading…</div>';
     const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
@@ -143,6 +341,10 @@
     renderStats();
     renderTabs();
     renderList();
+
+    const pending = allBookings.filter(function (b) { return (b.status || 'REQUESTED') === 'REQUESTED'; });
+    updateHomePendingCount(pending.length);
+    renderNotifications(pending);
   }
 
   function renderStats() {
@@ -318,6 +520,52 @@
 
     actions.innerHTML = '<span class="console-dim" style="font-size:14px">No further action</span>';
   }
+
+  // ---------- Profile ----------
+  function renderProfile() {
+    document.getElementById('profileName').textContent = driverProfile.driverName || 'Driver';
+    const vehicle = driverProfile.driverVehicle || 'Toyota Corolla';
+    const plate = driverProfile.driverPlate || '';
+    document.getElementById('profileVehicleLine').textContent = vehicle + (plate ? ' · ' + plate : '');
+    document.getElementById('pHeadline').value = driverProfile.driverHeadline || '';
+    document.getElementById('pBio').value = driverProfile.driverBio || '';
+    document.getElementById('acctName').textContent = driverProfile.driverName || '—';
+    document.getElementById('acctPhone').textContent = driverProfile.driverPhone || '—';
+    document.getElementById('editVehicleBtn').textContent = vehicle;
+    document.getElementById('editPlateBtn').textContent = plate || 'Add plate number';
+  }
+
+  document.getElementById('profileForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const statusEl = document.getElementById('profileSaveStatus');
+    statusEl.textContent = 'Saving…';
+    const headline = document.getElementById('pHeadline').value.trim();
+    const bio = document.getElementById('pBio').value.trim();
+    try {
+      await updateDoc(doc(db, 'config', 'app'), { driverHeadline: headline, driverBio: bio });
+      driverProfile.driverHeadline = headline;
+      driverProfile.driverBio = bio;
+      statusEl.textContent = 'Saved — live on the main site now.';
+    } catch (err) {
+      statusEl.textContent = 'Could not save: ' + err.message;
+    }
+    setTimeout(function () { statusEl.textContent = ''; }, 4000);
+  });
+
+  document.getElementById('editVehicleBtn').addEventListener('click', async function () {
+    const value = prompt('Vehicle (e.g. Toyota Corolla · 4 seats)', driverProfile.driverVehicle || '');
+    if (value == null) return;
+    await updateDoc(doc(db, 'config', 'app'), { driverVehicle: value });
+    driverProfile.driverVehicle = value;
+    renderProfile();
+  });
+  document.getElementById('editPlateBtn').addEventListener('click', async function () {
+    const value = prompt('Plate number', driverProfile.driverPlate || '');
+    if (value == null) return;
+    await updateDoc(doc(db, 'config', 'app'), { driverPlate: value });
+    driverProfile.driverPlate = value;
+    renderProfile();
+  });
 
   // ---------- Manual receipt generator (standalone, no Firestore record) ----------
   const mPaymentChoice = document.getElementById('mPaymentChoice');

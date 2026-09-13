@@ -11,12 +11,17 @@ service cloud.firestore {
         get(/databases/$(database)/documents/config/app).data.driverUid == request.auth.uid;
     }
 
-    // Holds { driverUid, driverName, driverPhone }. Public read so the client
-    // can check "is this signed-in user the driver". Never client-writable —
-    // edit driverUid from the Firebase console once the driver signs up.
+    // Holds { driverUid, driverName, driverPhone, driverVehicle, driverPlate,
+    // driverHeadline, driverBio }. Public read so the client can check "is
+    // this signed-in user the driver", and so the marketing site can render
+    // the driver's public bio. The driver can edit their own profile fields
+    // from the dashboard, but never their own driverUid (that stays
+    // console-only, set once when the driver first signs up).
     match /config/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow update: if isDriver() &&
+        request.resource.data.driverUid == resource.data.driverUid;
+      allow create, delete: if false;
     }
 
     match /bookings/{bookingId} {
