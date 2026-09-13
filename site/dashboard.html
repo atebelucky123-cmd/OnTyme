@@ -72,7 +72,36 @@
           </div>
           <svg class="console-nav-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
         </button>
+
+        <button type="button" class="console-nav-card" data-go="documents">
+          <div class="console-nav-icon teal-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 13h6M9 17h6"></path></svg>
+          </div>
+          <div class="console-nav-text">
+            <div class="title">Receipts &amp; invoices</div>
+            <div class="desc">Look up anything already generated and download it again.</div>
+          </div>
+          <svg class="console-nav-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
+        </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===================== DOCUMENTS ===================== -->
+  <div id="view-documents" class="console-view" hidden>
+    <div class="console-shell">
+      <button type="button" class="console-back" data-go="home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg>Home
+      </button>
+      <h1 class="console-h1">Receipts &amp; invoices</h1>
+      <p class="sub">Every document generated, from real bookings and manual walk-ins alike.</p>
+
+      <div class="field" style="max-width:420px;margin-top:20px">
+        <input id="documentSearch" type="text" placeholder="Search by name, phone, or booking ref…">
+      </div>
+
+      <div id="documentsList" style="margin-top:22px"></div>
+      <div id="documentsEmpty" hidden class="empty-state">No documents match that search.</div>
     </div>
   </div>
 
@@ -231,13 +260,14 @@
   ];
 
   // ---------- View routing ----------
-  const VIEWS = ['home', 'bookings', 'receipt', 'profile'];
+  const VIEWS = ['home', 'bookings', 'receipt', 'documents', 'profile'];
   function goView(name) {
     VIEWS.forEach(function (v) {
       document.getElementById('view-' + v).hidden = (v !== name);
     });
     document.getElementById('notifDropdown').hidden = true;
     window.scrollTo({ top: 0 });
+    if (name === 'documents') loadDocuments();
   }
   document.querySelectorAll('[data-go]').forEach(function (el) {
     el.addEventListener('click', function () { goView(el.getAttribute('data-go')); });
@@ -640,6 +670,70 @@
     }
     submitBtn.disabled = false;
     submitBtn.textContent = 'Generate receipt';
+  });
+
+  // ---------- Receipts & invoices (searchable document index) ----------
+  let allDocuments = [];
+  let documentsLoaded = false;
+
+  async function loadDocuments() {
+    const listEl = document.getElementById('documentsList');
+    const emptyEl = document.getElementById('documentsEmpty');
+    listEl.innerHTML = '<div class="empty-state">Loading…</div>';
+    emptyEl.hidden = true;
+    try {
+      const q = query(collection(db, 'documents'), orderBy('updatedAt', 'desc'));
+      const snap = await getDocs(q);
+      allDocuments = [];
+      snap.forEach(function (docSnap) { allDocuments.push(Object.assign({ id: docSnap.id }, docSnap.data())); });
+      documentsLoaded = true;
+      renderDocuments();
+    } catch (err) {
+      listEl.innerHTML = '<div class="empty-state">Could not load documents: ' + err.message + '</div>';
+    }
+  }
+
+  function renderDocuments() {
+    const listEl = document.getElementById('documentsList');
+    const emptyEl = document.getElementById('documentsEmpty');
+    const term = document.getElementById('documentSearch').value.trim().toLowerCase();
+
+    const filtered = !term ? allDocuments : allDocuments.filter(function (d) {
+      return [d.customerName, d.customerPhone, d.bookingRef].some(function (field) {
+        return field && String(field).toLowerCase().indexOf(term) !== -1;
+      });
+    });
+
+    if (!filtered.length) {
+      listEl.innerHTML = '';
+      emptyEl.hidden = false;
+      return;
+    }
+    emptyEl.hidden = true;
+    listEl.innerHTML = filtered.map(function (d) {
+      const amountText = d.amount ? formatNaira(d.amount) : '—';
+      const sourceTag = d.manual ? 'Manual' : 'Booking';
+      return '<div class="booking-card">' +
+        '<div class="booking-card-top">' +
+          '<div>' +
+            '<div class="ref">' + (d.bookingRef || d.bookingId) + '</div>' +
+            '<div class="route">' + (d.customerName || 'Guest') + ' · ' + (d.customerPhone || 'no phone given') + '</div>' +
+            '<div class="meta">' +
+              '<span>' + (d.pickup || '') + (d.destination ? ' → ' + d.destination : '') + '</span>' +
+              '<span>' + (d.date || '') + '</span>' +
+              '<span>' + amountText + '</span>' +
+              '<span>' + sourceTag + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<span class="status-badge status-' + (d.kind === 'receipt' ? 'COMPLETED' : 'CONFIRMED') + '">' + (d.kind === 'receipt' ? 'Receipt' : 'Invoice') + '</span>' +
+        '</div>' +
+        '<div class="booking-card-actions"><a class="btn btn-secondary" href="' + d.url + '" target="_blank" rel="noopener">Download</a></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById('documentSearch').addEventListener('input', function () {
+    if (documentsLoaded) renderDocuments();
   });
 </script>
 <script type="module" src="auth-ui.js"></script>

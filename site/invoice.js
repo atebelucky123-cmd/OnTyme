@@ -8,6 +8,7 @@
 //   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 //   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 import { supabase } from './supabase.js';
+import { db, doc, setDoc, serverTimestamp } from './firebase.js';
 import { formatNaira } from './pricing.js';
 
 // pdf-lib's standard fonts (Helvetica etc.) only support WinAnsi encoding,
@@ -222,7 +223,32 @@ export async function generateAndUploadDocument(booking, kind) {
   if (error) throw error;
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(path, { download: downloadName });
-  return data.publicUrl;
+  const url = data.publicUrl;
+
+  // Index this document so the driver console's "Receipts & Invoices" screen
+  // can list and search it later — this is the only durable record a manual
+  // (no-booking) receipt ever gets, so it has to happen here, not just be
+  // left to the Firestore booking doc for real bookings.
+  try {
+    await setDoc(doc(db, 'documents', booking.id + '_' + kind), {
+      kind: kind,
+      bookingId: booking.id,
+      bookingRef: booking.bookingRef || booking.id,
+      customerName: booking.customerName || null,
+      customerPhone: booking.customerPhone || null,
+      pickup: booking.pickup || null,
+      destination: booking.destination || null,
+      date: booking.date || null,
+      amount: kind === 'receipt' ? (booking.agreedFare || null) : (booking.agreedFare || booking.fareHigh || null),
+      url: url,
+      manual: booking.id.indexOf('manual-') === 0,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch (err) {
+    console.error('Could not index document for search:', err);
+  }
+
+  return url;
 }
 
 // EmailJS free tier doesn't support attachments, so this emails a link to

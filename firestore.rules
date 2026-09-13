@@ -39,6 +39,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Index of every generated invoice/receipt PDF (bookingRef, customer
+    // name/phone, amount, url) so the driver console can search/re-download
+    // them later — the only durable record a manual walk-in receipt gets.
+    // Written by whichever browser (guest customer or driver) generates a
+    // document, same trust model as creating a booking. Only the driver can
+    // browse the index back.
+    match /documents/{docId} {
+      allow create, update: if true;
+      allow read: if isDriver();
+      allow delete: if false;
+    }
+
     // One-time "confirm your information" profile, set after email OTP
     // verification. A customer can only see/write their own.
     match /customers/{uid} {
