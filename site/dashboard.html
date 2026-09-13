@@ -122,6 +122,25 @@
             <div class="field field-full"><label for="mDestination">Destination</label><input id="mDestination" type="text" required></div>
             <div class="field"><label for="mDate">Date</label><input id="mDate" type="date" required></div>
             <div class="field"><label for="mTime">Time</label><input id="mTime" type="time"></div>
+            <div class="field">
+              <label for="mPassengers">Passengers (optional)</label>
+              <select id="mPassengers" class="console-select">
+                <option value="">Not specified</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="mLuggage">Luggage (optional)</label>
+              <select id="mLuggage" class="console-select">
+                <option value="">Not specified</option>
+                <option value="No luggage">No luggage</option>
+                <option value="Small">Small</option>
+                <option value="Medium">Medium</option>
+              </select>
+            </div>
             <div class="field"><label for="mAmount">Amount paid (₦)</label><input id="mAmount" type="number" min="0" required></div>
             <div class="field">
               <label>Payment method</label>
@@ -599,6 +618,8 @@
       customerPhone: document.getElementById('mCustomerPhone').value.trim(),
       customerEmail: document.getElementById('mCustomerEmail').value.trim() || null,
       tripTypeLabel: document.getElementById('mTripType').value || null,
+      passengers: document.getElementById('mPassengers').value || null,
+      luggage: document.getElementById('mLuggage').value || null,
       pickup: document.getElementById('mPickup').value.trim(),
       destination: document.getElementById('mDestination').value.trim(),
       date: document.getElementById('mDate').value,

@@ -714,6 +714,7 @@ button { font-family: inherit; cursor: pointer; }
   text-transform: uppercase;
   color: var(--cocoa-dark);
 }
+@media (max-width: 640px) { .console-title { display: none; } }
 
 .driver-console {
   background: var(--tan-page);

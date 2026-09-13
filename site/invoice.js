@@ -207,7 +207,13 @@ async function buildDocument(booking, kind) {
 export async function generateAndUploadDocument(booking, kind) {
   const bytes = await buildDocument(booking, kind);
   const bucket = kind === 'receipt' ? 'ontyme-receipts' : 'ontyme-invoices';
+  // Storage path stays keyed on the booking id (guaranteed unique, avoids
+  // overwrites) — the friendly name below is only what the browser shows
+  // when someone downloads it, set via Supabase's `download` option.
   const path = booking.id + '.pdf';
+  const label = kind === 'receipt' ? 'Receipt' : 'Invoice';
+  const dateLabel = booking.date || new Date().toISOString().slice(0, 10);
+  const downloadName = 'OnTyme ' + label + ' (' + dateLabel + ').pdf';
 
   const { error } = await supabase.storage.from(bucket).upload(path, bytes, {
     contentType: 'application/pdf',
@@ -215,7 +221,7 @@ export async function generateAndUploadDocument(booking, kind) {
   });
   if (error) throw error;
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path, { download: downloadName });
   return data.publicUrl;
 }
 
