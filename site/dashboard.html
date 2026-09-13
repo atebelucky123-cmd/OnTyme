@@ -15,10 +15,10 @@
 </head>
 <body>
 
-<header class="site-header">
+<header class="site-header console-header">
   <div class="nav-left">
-    <a href="index.html" class="logo"><img src="assets/logo.svg" alt="OnTyme"><span class="tagline">For Busy People.</span></a>
-    <span style="font-size:15px;color:var(--cocoa-500)">Driver dashboard</span>
+    <a href="index.html" class="logo"><img src="assets/logo-tan.svg" alt="OnTyme"><span class="tagline">For Busy People.</span></a>
+    <span class="console-chip">Driver console</span>
   </div>
   <div class="nav-right" data-auth-slot></div>
 </header>
@@ -29,7 +29,7 @@
   <a href="login.html?next=dashboard.html" class="btn btn-primary" style="margin-top:20px;display:inline-block">Sign in</a>
 </div>
 
-<div id="dashboardBody" hidden class="page-shell">
+<div id="dashboardBody" hidden class="page-shell driver-console">
   <h1>Today's bookings</h1>
   <p class="sub">Every request comes in here. Confirm with an agreed fare, or decline.</p>
 
@@ -45,7 +45,7 @@
         <div class="field"><label for="mCustomerEmail">Email (optional, sends the receipt)</label><input id="mCustomerEmail" type="email"></div>
         <div class="field">
           <label for="mTripType">Trip type (optional)</label>
-          <select id="mTripType" style="width:100%;background:var(--cream-off);border:1px solid rgba(46,27,18,.16);border-radius:10px;padding:15px 16px;font-size:16px;font-family:inherit;color:var(--cocoa-dark)">
+          <select id="mTripType" class="console-select">
             <option value="">Not specified</option>
             <option value="One-way">One-way</option>
             <option value="Round trip">Round trip</option>
@@ -240,7 +240,7 @@
       wrap.innerHTML =
         '<input type="number" placeholder="Agreed fare (₦)" data-fare-input value="' + (b.fareHigh || '') + '">' +
         '<button type="button" class="btn btn-primary" data-confirm>Confirm</button>' +
-        '<button type="button" class="btn" style="background:transparent;color:var(--cocoa-500);border:1px solid rgba(46,27,18,.25);padding:10px 16px;font-size:14px" data-decline>Decline</button>';
+        '<button type="button" class="btn btn-ghost" data-decline>Decline</button>';
       actions.appendChild(wrap);
 
       wrap.querySelector('[data-confirm]').addEventListener('click', async function (ev) {
@@ -273,7 +273,7 @@
       wrap.style.display = 'flex';
       wrap.style.gap = '10px';
       wrap.innerHTML =
-        '<span style="font-size:15px;font-weight:600;color:var(--cocoa-dark);align-self:center">Agreed fare: ' + formatNaira(b.agreedFare || 0) + '</span>' +
+        '<span class="console-strong" style="font-size:15px;align-self:center">Agreed fare: ' + formatNaira(b.agreedFare || 0) + '</span>' +
         '<button type="button" class="btn btn-teal" data-mark-paid style="margin-left:auto">Mark paid &amp; generate receipt</button>';
       actions.appendChild(wrap);
 
@@ -316,7 +316,7 @@
       return;
     }
 
-    actions.innerHTML = '<span style="font-size:14px;color:var(--cocoa-500)">No further action</span>';
+    actions.innerHTML = '<span class="console-dim" style="font-size:14px">No further action</span>';
   }
 
   // ---------- Manual receipt generator (standalone, no Firestore record) ----------

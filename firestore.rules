@@ -33,5 +33,17 @@ service cloud.firestore {
           request.resource.data.status == 'CANCELLED');
       allow delete: if false;
     }
+
+    // One-time "confirm your information" profile, set after email OTP
+    // verification. A customer can only see/write their own.
+    match /customers/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Short-lived OTP codes for email verification. Same rule: only the
+    // owning user can read or write their own code.
+    match /otps/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
   }
 }

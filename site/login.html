@@ -52,15 +52,23 @@
 
 <script type="module">
   import {
-    auth, googleProvider, onAuthStateChanged, signInWithPopup,
+    auth, db, doc, getDoc, googleProvider, onAuthStateChanged, signInWithPopup,
     signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail
   } from './firebase.js';
 
   const params = new URLSearchParams(window.location.search);
   const next = params.get('next') || 'index.html';
 
-  onAuthStateChanged(auth, function (user) {
-    if (user) window.location.href = next;
+  onAuthStateChanged(auth, async function (user) {
+    if (!user) return;
+    let verified = false;
+    try {
+      const snap = await getDoc(doc(db, 'customers', user.uid));
+      verified = snap.exists() && snap.data().verified === true;
+    } catch (err) {
+      console.error(err);
+    }
+    window.location.href = verified ? next : 'confirm-info.html?next=' + encodeURIComponent(next);
   });
 
   const heading = document.getElementById('authHeading');

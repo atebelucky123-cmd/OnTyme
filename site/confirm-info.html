@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confirm your information · OnTyme</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-card" style="max-width:440px">
+    <a href="index.html" class="logo" style="display:flex;flex-direction:column;align-items:center;gap:6px">
+      <img src="assets/logo.svg" alt="OnTyme">
+      <span class="tagline">For Busy People.</span>
+    </a>
+
+    <!-- STEP 1: Confirm your information -->
+    <div id="stepInfo">
+      <h1>Confirm your information</h1>
+      <p class="sub">One-time setup, so we know who's booking and where to send invoices.</p>
+
+      <form id="infoForm">
+        <div class="field-row" style="margin-bottom:16px">
+          <div class="field"><label for="firstName">First name</label><input id="firstName" type="text" required></div>
+          <div class="field"><label for="lastName">Last name</label><input id="lastName" type="text" required></div>
+        </div>
+        <div class="field" style="margin-bottom:16px">
+          <label for="infoEmail">Email</label>
+          <input id="infoEmail" type="email" required>
+        </div>
+        <div class="field" style="margin-bottom:8px">
+          <label for="infoPhone">Phone number</label>
+          <input id="infoPhone" type="tel" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="sendCodeBtn" style="margin-top:20px">Next</button>
+      </form>
+      <div id="infoMessageBox"></div>
+    </div>
+
+    <!-- STEP 2: Verify email -->
+    <div id="stepVerify" hidden>
+      <h1>Verify your email</h1>
+      <p class="sub">Enter the 6-digit code we sent to <strong id="verifyEmailLabel"></strong>.</p>
+
+      <form id="verifyForm">
+        <div class="field" style="margin-bottom:8px">
+          <label for="otpCode">Code</label>
+          <input id="otpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required style="letter-spacing:.4em;font-size:22px;text-align:center">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="verifyBtn" style="margin-top:16px">Verify</button>
+      </form>
+      <div id="verifyMessageBox"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
+        <button type="button" class="back-pill" id="backToInfoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          Back
+        </button>
+        <button type="button" class="forgot-link" id="resendBtn" style="margin:0">Resend code</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db, doc, getDoc, setDoc, serverTimestamp, onAuthStateChanged, signOut } from './firebase.js';
+
+  const params = new URLSearchParams(window.location.search);
+  const next = params.get('next') || 'index.html';
+
+  const EMAILJS_PUBLIC_KEY = 'Jv3M9WbYvsxsOmP9O';
+  const EMAILJS_SERVICE_ID = 'service_bt9lwzj';
+  // TODO: create a second EmailJS template for OTP codes (see chat for the
+  // content to paste in) and put its Template ID here.
+  const OTP_TEMPLATE_ID = 'REPLACE_WITH_OTP_TEMPLATE_ID';
+
+  let emailjsReady = false;
+  function ensureEmailJsInit() {
+    if (!emailjsReady) { window.emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }); emailjsReady = true; }
+  }
+
+  let currentUser = null;
+  onAuthStateChanged(auth, function (user) {
+    if (!user) { window.location.href = 'login.html?next=' + encodeURIComponent(next); return; }
+    currentUser = user;
+    if (user.displayName) {
+      var parts = user.displayName.trim().split(/\s+/);
+      document.getElementById('firstName').value = parts[0] || '';
+      document.getElementById('lastName').value = parts.slice(1).join(' ') || '';
+    }
+    document.getElementById('infoEmail').value = user.email || '';
+  });
+
+  function showMessage(boxId, text, type) {
+    document.getElementById(boxId).innerHTML = '<div class="auth-' + (type === 'error' ? 'error' : 'message') + '">' + text + '</div>';
+  }
+
+  function generateCode() {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  let pendingProfile = null;
+
+  document.getElementById('infoForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('sendCodeBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending code…';
+
+    pendingProfile = {
+      firstName: document.getElementById('firstName').value.trim(),
+      lastName: document.getElementById('lastName').value.trim(),
+      email: document.getElementById('infoEmail').value.trim(),
+      phone: document.getElementById('infoPhone').value.trim()
+    };
+    const code = generateCode();
+
+    try {
+      await setDoc(doc(db, 'otps', currentUser.uid), {
+        code: code,
+        email: pendingProfile.email,
+        createdAt: serverTimestamp()
+      });
+      ensureEmailJsInit();
+      await window.emailjs.send(EMAILJS_SERVICE_ID, OTP_TEMPLATE_ID, {
+        to_email: pendingProfile.email,
+        customer_name: pendingProfile.firstName || 'there',
+        otp_code: code
+      });
+      document.getElementById('verifyEmailLabel').textContent = pendingProfile.email;
+      document.getElementById('stepInfo').hidden = true;
+      document.getElementById('stepVerify').hidden = false;
+    } catch (err) {
+      showMessage('infoMessageBox', 'Could not send a code: ' + err.message, 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Next';
+  });
+
+  document.getElementById('backToInfoBtn').addEventListener('click', function () {
+    document.getElementById('stepVerify').hidden = true;
+    document.getElementById('stepInfo').hidden = false;
+  });
+
+  document.getElementById('resendBtn').addEventListener('click', async function () {
+    if (!pendingProfile) return;
+    const code = generateCode();
+    try {
+      await setDoc(doc(db, 'otps', currentUser.uid), { code: code, email: pendingProfile.email, createdAt: serverTimestamp() });
+      ensureEmailJsInit();
+      await window.emailjs.send(EMAILJS_SERVICE_ID, OTP_TEMPLATE_ID, {
+        to_email: pendingProfile.email,
+        customer_name: pendingProfile.firstName || 'there',
+        otp_code: code
+      });
+      showMessage('verifyMessageBox', 'A new code was sent.', 'message');
+    } catch (err) {
+      showMessage('verifyMessageBox', 'Could not resend: ' + err.message, 'error');
+    }
+  });
+
+  document.getElementById('verifyForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('verifyBtn');
+    btn.disabled = true;
+    btn.textContent = 'Verifying…';
+
+    const entered = document.getElementById('otpCode').value.trim();
+    try {
+      const snap = await getDoc(doc(db, 'otps', currentUser.uid));
+      if (!snap.exists() || snap.data().code !== entered) {
+        showMessage('verifyMessageBox', 'That code is incorrect.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Verify';
+        return;
+      }
+      const createdAt = snap.data().createdAt;
+      const ageMs = createdAt ? Date.now() - createdAt.toMillis() : 0;
+      if (ageMs > 10 * 60 * 1000) {
+        showMessage('verifyMessageBox', 'That code expired. Request a new one.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Verify';
+        return;
+      }
+
+      await setDoc(doc(db, 'customers', currentUser.uid), Object.assign({}, pendingProfile, {
+        verified: true,
+        createdAt: serverTimestamp()
+      }));
+      window.location.href = next;
+    } catch (err) {
+      showMessage('verifyMessageBox', 'Could not verify: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Verify';
+    }
+  });
+</script>
+</body>
+</html>
