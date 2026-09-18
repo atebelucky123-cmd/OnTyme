@@ -61,6 +61,15 @@
 
   onAuthStateChanged(auth, async function (user) {
     if (!user) return;
+    try {
+      const configSnap = await getDoc(doc(db, 'config', 'app'));
+      if (configSnap.exists() && configSnap.data().driverUid === user.uid) {
+        window.location.href = 'dashboard.html';
+        return;
+      }
+    } catch (err) {
+      console.error(err);
+    }
     let verified = false;
     try {
       const snap = await getDoc(doc(db, 'customers', user.uid));

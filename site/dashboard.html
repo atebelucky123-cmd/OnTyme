@@ -300,7 +300,12 @@
       return;
     }
     if (driverUid !== user.uid) {
-      gateMessage.textContent = 'This account is not the registered driver account.';
+      gateMessage.textContent = 'This account is not the registered driver account. ' +
+        'Signed in as ' + (user.email || 'unknown') + ' with UID "' + user.uid + '", ' +
+        'but config/app.driverUid is "' + driverUid + '". If the emails match but the UIDs ' +
+        'don\'t, this Firebase account was likely created via a different sign-in method ' +
+        '(Google vs. email/password) than the one used to set driverUid — check ' +
+        'Authentication > Users in the Firebase console for a duplicate row with the same email.';
       gate.hidden = false;
       return;
     }
