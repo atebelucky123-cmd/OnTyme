@@ -324,6 +324,7 @@ async function buildBlankTicketSheet(companyInfo) {
 
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const italic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
   const c = (rgbArr) => rgb(rgbArr[0], rgbArr[1], rgbArr[2]);
 
   const iconBytes = await fetchBytes('./assets/favicon.png');
@@ -360,9 +361,16 @@ async function buildBlankTicketSheet(companyInfo) {
 
     const iconSize = 20;
     page.drawImage(icon, { x: M + 14, y: y - iconSize + 5, width: iconSize, height: iconSize });
-    text('OnTyme', M + 14 + iconSize + 8, y - iconSize + 12, { size: 14, font: bold, color: CHOCOLATE });
+    const title = 'OnTyme';
+    const titleSize = 15;
+    text(title, W / 2 - bold.widthOfTextAtSize(title, titleSize) / 2, y - iconSize + 12, { size: titleSize, font: bold, color: CHOCOLATE });
     rightText('TRIP TICKET', W - M - 14, y - 5, { size: 9, font: bold, color: TEAL_DARK });
     y -= iconSize + 12;
+
+    const tagline = 'For Busy People';
+    const taglineSize = 8;
+    text(tagline, W / 2 - italic.widthOfTextAtSize(tagline, taglineSize) / 2, y, { size: taglineSize, font: italic, color: COCOA_500 });
+    y -= 14;
 
     text('Address: Lagos, Nigeria', M + 14, y, { size: 8, color: COCOA_500 });
     y -= 10;
@@ -397,11 +405,15 @@ async function buildBlankTicketSheet(companyInfo) {
     // Signatures anchor to the bottom of the panel rather than trailing
     // right after the fields, however much or little room that leaves.
     const sigW = (innerW - 28 - 24) / 2;
-    const sigY = top - panelH + 34;
+    const sigY = top - panelH + 42;
     page.drawLine({ start: { x: M + 14, y: sigY }, end: { x: M + 14 + sigW, y: sigY }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
     page.drawLine({ start: { x: M + 14 + sigW + 24, y: sigY }, end: { x: rightEdge, y: sigY }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
-    text("Passenger's signature / date", M + 14, sigY - 11, { size: 7, color: COCOA_500 });
-    text('Driver / vendor signature', M + 14 + sigW + 24, sigY - 11, { size: 7, color: COCOA_500 });
+    text("Passenger's signature / date", M + 14, sigY - 13, { size: 9, color: COCOA_500 });
+    text('Driver / vendor signature', M + 14 + sigW + 24, sigY - 13, { size: 9, color: COCOA_500 });
+
+    const footer = 'Private driving services';
+    const footerSize = 7.5;
+    text(footer, W / 2 - italic.widthOfTextAtSize(footer, footerSize) / 2, sigY - 28, { size: footerSize, font: italic, color: COCOA_500 });
   }
 
   drawPanel(panelTops[0]);
