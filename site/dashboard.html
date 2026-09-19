@@ -220,7 +220,7 @@
               <label for="tRefNo">Reference no. (as written on the paper ticket)</label>
               <div style="display:flex;gap:8px">
                 <input id="tRefNo" type="text" required style="flex:1">
-                <button type="button" class="btn btn-secondary" id="tUseNextRefBtn" style="white-space:nowrap">Use next number</button>
+                <button type="button" class="btn btn-secondary" id="tUseNextRefBtn" style="white-space:nowrap">Generate ref number</button>
               </div>
             </div>
             <div class="field field-full"><label for="tCustomerName">Passenger's name</label><input id="tCustomerName" type="text" required></div>
@@ -786,7 +786,8 @@
         tx.set(counterRef, { next: current + 1 }, { merge: true });
         return current;
       });
-      document.getElementById('tRefNo').value = 'OT-M-' + String(next).padStart(5, '0');
+      const yy = String(new Date().getFullYear()).slice(2);
+      document.getElementById('tRefNo').value = 'OT' + yy + String(next).padStart(3, '0');
     } catch (err) {
       alert('Could not get the next reference number: ' + err.message);
     }
