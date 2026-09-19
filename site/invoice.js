@@ -383,7 +383,7 @@ async function buildBlankTicketSheet(companyInfo) {
     y -= 20;
     blankRow('DESTINATION', M + 14, rightEdge, y);
     y -= 20;
-    blankRow('AMOUNT PAID (₦)', M + 14, rightEdge, y);
+    blankRow('AMOUNT PAID (NGN)', M + 14, rightEdge, y);
     y -= 30;
 
     const sigW = (innerW - 28 - 24) / 2;
