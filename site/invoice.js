@@ -413,7 +413,7 @@ async function buildBlankTicketSheet(companyInfo) {
     // Signatures anchor to the bottom of the panel rather than trailing
     // right after the fields, however much or little room that leaves.
     const sigW = (innerW - 28 - 24) / 2;
-    const sigY = top - panelH + 42;
+    const sigY = top - panelH + 22;
     page.drawLine({ start: { x: M + 14, y: sigY }, end: { x: M + 14 + sigW, y: sigY }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
     page.drawLine({ start: { x: M + 14 + sigW + 24, y: sigY }, end: { x: rightEdge, y: sigY }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
     text("Passenger's signature / date", M + 14, sigY - 13, { size: 9, color: COCOA_500 });
