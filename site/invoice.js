@@ -211,7 +211,7 @@ async function buildDocument(booking, kind) {
 async function buildTicketDocument(data) {
   const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
   const pdfDoc = await PDFDocument.create();
-  const W = 380, H = 560, M = 26;
+  const W = 380, H = 590, M = 26;
   const page = pdfDoc.addPage([W, H]);
 
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -286,6 +286,7 @@ async function buildTicketDocument(data) {
   twoCol('Date', data.date, 'Time', data.time);
   fieldRow("Passenger's name", data.customerName);
   fieldRow('Phone no.', data.customerPhone);
+  fieldRow("Passenger's email", data.customerEmail);
   fieldRow("Driver's name", data.driverName);
   fieldRow('Pickup location', data.pickup);
   fieldRow('Destination', data.destination);
@@ -323,7 +324,6 @@ async function buildBlankTicketSheet(companyInfo) {
 
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const italic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
   const c = (rgbArr) => rgb(rgbArr[0], rgbArr[1], rgbArr[2]);
 
   const iconBytes = await fetchBytes('./assets/favicon.png');
@@ -351,47 +351,57 @@ async function buildBlankTicketSheet(companyInfo) {
       const labelW = bold.widthOfTextAtSize(label, 8.5) + 6;
       page.drawLine({ start: { x: xStart + labelW, y: yPos - 2 }, end: { x: xEnd, y: yPos - 2 }, thickness: 0.7, color: c(HAIRLINE), opacity: 0.5 });
     };
+    // For fields that tend to run long when handwritten (addresses) — a
+    // labelled first line plus a second, unlabelled blank line beneath it.
+    const blankRowTwoLines = (label, xStart, xEnd, yPos) => {
+      blankRow(label, xStart, xEnd, yPos);
+      page.drawLine({ start: { x: xStart, y: yPos - 2 - 15 }, end: { x: xEnd, y: yPos - 2 - 15 }, thickness: 0.7, color: c(HAIRLINE), opacity: 0.5 });
+    };
 
-    const iconSize = 22;
-    page.drawImage(icon, { x: M + 14, y: y - iconSize + 6, width: iconSize, height: iconSize });
-    text('OnTyme', M + 14 + iconSize + 8, y - iconSize + 13, { size: 15, font: bold, color: CHOCOLATE });
-    rightText('TRIP TICKET', W - M - 14, y - 6, { size: 9, font: bold, color: TEAL_DARK });
-    y -= iconSize + 14;
+    const iconSize = 20;
+    page.drawImage(icon, { x: M + 14, y: y - iconSize + 5, width: iconSize, height: iconSize });
+    text('OnTyme', M + 14 + iconSize + 8, y - iconSize + 12, { size: 14, font: bold, color: CHOCOLATE });
+    rightText('TRIP TICKET', W - M - 14, y - 5, { size: 9, font: bold, color: TEAL_DARK });
+    y -= iconSize + 12;
 
     text('Address: Lagos, Nigeria', M + 14, y, { size: 8, color: COCOA_500 });
-    y -= 11;
+    y -= 10;
     text('Phone: ' + (companyInfo.companyPhone || '—'), M + 14, y, { size: 8, color: COCOA_500 });
-    y -= 11;
+    y -= 10;
     text('Email: ' + (companyInfo.companyEmail || '—'), M + 14, y, { size: 8, color: COCOA_500 });
-    y -= 16;
+    y -= 14;
 
     const midX = M + 14 + (innerW - 28) / 2 + 8;
     const rightEdge = W - M - 14;
+    const rowGap = 24;
 
     blankRow('REF NO.', M + 14, rightEdge, y);
-    y -= 20;
+    y -= rowGap;
     blankRow('DATE', M + 14, midX - 8, y);
     blankRow('TIME', midX, rightEdge, y);
-    y -= 20;
+    y -= rowGap;
     blankRow("PASSENGER'S NAME", M + 14, rightEdge, y);
-    y -= 20;
+    y -= rowGap;
+    blankRow("PASSENGER'S EMAIL", M + 14, rightEdge, y);
+    y -= rowGap;
     blankRow('PHONE NO.', M + 14, rightEdge, y);
-    y -= 20;
+    y -= rowGap;
     blankRow("DRIVER'S NAME", M + 14, rightEdge, y);
-    y -= 20;
-    blankRow('PICKUP LOCATION', M + 14, rightEdge, y);
-    y -= 20;
-    blankRow('DESTINATION', M + 14, rightEdge, y);
-    y -= 20;
+    y -= rowGap;
+    blankRowTwoLines('PICKUP LOCATION', M + 14, rightEdge, y);
+    y -= rowGap + 15;
+    blankRowTwoLines('DESTINATION', M + 14, rightEdge, y);
+    y -= rowGap + 15;
     blankRow('AMOUNT PAID (NGN)', M + 14, rightEdge, y);
-    y -= 30;
 
+    // Signatures anchor to the bottom of the panel rather than trailing
+    // right after the fields, however much or little room that leaves.
     const sigW = (innerW - 28 - 24) / 2;
-    page.drawLine({ start: { x: M + 14, y }, end: { x: M + 14 + sigW, y }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
-    page.drawLine({ start: { x: M + 14 + sigW + 24, y }, end: { x: rightEdge, y }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
-    y -= 11;
-    text("Passenger's signature / date", M + 14, y, { size: 7, color: COCOA_500 });
-    text('Driver / vendor signature', M + 14 + sigW + 24, y, { size: 7, color: COCOA_500 });
+    const sigY = top - panelH + 34;
+    page.drawLine({ start: { x: M + 14, y: sigY }, end: { x: M + 14 + sigW, y: sigY }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
+    page.drawLine({ start: { x: M + 14 + sigW + 24, y: sigY }, end: { x: rightEdge, y: sigY }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
+    text("Passenger's signature / date", M + 14, sigY - 11, { size: 7, color: COCOA_500 });
+    text('Driver / vendor signature', M + 14 + sigW + 24, sigY - 11, { size: 7, color: COCOA_500 });
   }
 
   drawPanel(panelTops[0]);
@@ -401,7 +411,6 @@ async function buildBlankTicketSheet(companyInfo) {
   for (let x = M; x < W - M; x += 10) {
     page.drawLine({ start: { x, y: cutY }, end: { x: Math.min(x + 5, W - M), y: cutY }, thickness: 0.75, color: c(HAIRLINE), opacity: 0.5 });
   }
-  page.drawText('cut here', { x: W / 2 - italic.widthOfTextAtSize('cut here', 7) / 2, y: cutY + 3, size: 7, font: italic, color: c(COCOA_500) });
 
   return pdfDoc.save();
 }

@@ -225,6 +225,7 @@
             </div>
             <div class="field field-full"><label for="tCustomerName">Passenger's name</label><input id="tCustomerName" type="text" required></div>
             <div class="field"><label for="tCustomerPhone">Phone no.</label><input id="tCustomerPhone" type="tel" required></div>
+            <div class="field"><label for="tCustomerEmail">Passenger's email (optional)</label><input id="tCustomerEmail" type="email"></div>
             <div class="field"><label for="tDriverName">Driver's name</label><input id="tDriverName" type="text"></div>
             <div class="field"><label for="tAmount">Amount paid (₦)</label><input id="tAmount" type="number" min="0" required></div>
             <div class="field field-full"><label for="tPickup">Pickup location</label><input id="tPickup" type="text" required></div>
@@ -803,6 +804,7 @@
       bookingRef: document.getElementById('tRefNo').value.trim(),
       customerName: document.getElementById('tCustomerName').value.trim(),
       customerPhone: document.getElementById('tCustomerPhone').value.trim(),
+      customerEmail: document.getElementById('tCustomerEmail').value.trim() || null,
       driverName: document.getElementById('tDriverName').value.trim(),
       pickup: document.getElementById('tPickup').value.trim(),
       destination: document.getElementById('tDestination').value.trim(),
