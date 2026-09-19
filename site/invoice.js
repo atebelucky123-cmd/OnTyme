@@ -361,16 +361,24 @@ async function buildBlankTicketSheet(companyInfo) {
 
     const iconSize = 20;
     page.drawImage(icon, { x: M + 14, y: y - iconSize + 5, width: iconSize, height: iconSize });
-    const title = 'OnTyme';
-    const titleSize = 15;
-    text(title, W / 2 - bold.widthOfTextAtSize(title, titleSize) / 2, y - iconSize + 12, { size: titleSize, font: bold, color: CHOCOLATE });
-    rightText('TRIP TICKET', W - M - 14, y - 5, { size: 9, font: bold, color: TEAL_DARK });
-    y -= iconSize + 12;
 
-    const tagline = 'For Busy People';
-    const taglineSize = 8;
-    text(tagline, W / 2 - italic.widthOfTextAtSize(tagline, taglineSize) / 2, y, { size: taglineSize, font: italic, color: COCOA_500 });
-    y -= 14;
+    const title = 'OnTyme';
+    const titleSize = 22;
+    const titleY = y - 6;
+    text(title, W / 2 - bold.widthOfTextAtSize(title, titleSize) / 2, titleY, { size: titleSize, font: bold, color: CHOCOLATE });
+    rightText('TRIP TICKET', W - M - 14, y - 5, { size: 9, font: bold, color: TEAL_DARK });
+
+    const tagline = '"For Busy People"';
+    const taglineSize = 9.5;
+    let ty = titleY - 18;
+    text(tagline, W / 2 - italic.widthOfTextAtSize(tagline, taglineSize) / 2, ty, { size: taglineSize, font: italic, color: COCOA_500 });
+
+    const services = 'Scheduled Private Driving Services';
+    const servicesSize = 8;
+    ty -= 13;
+    text(services, W / 2 - bold.widthOfTextAtSize(services, servicesSize) / 2, ty, { size: servicesSize, font: bold, color: COCOA_500 });
+
+    y = ty - 16;
 
     text('Address: Lagos, Nigeria', M + 14, y, { size: 8, color: COCOA_500 });
     y -= 10;
@@ -410,10 +418,6 @@ async function buildBlankTicketSheet(companyInfo) {
     page.drawLine({ start: { x: M + 14 + sigW + 24, y: sigY }, end: { x: rightEdge, y: sigY }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
     text("Passenger's signature / date", M + 14, sigY - 13, { size: 9, color: COCOA_500 });
     text('Driver / vendor signature', M + 14 + sigW + 24, sigY - 13, { size: 9, color: COCOA_500 });
-
-    const footer = 'Private driving services';
-    const footerSize = 7.5;
-    text(footer, W / 2 - italic.widthOfTextAtSize(footer, footerSize) / 2, sigY - 28, { size: footerSize, font: italic, color: COCOA_500 });
   }
 
   drawPanel(panelTops[0]);
