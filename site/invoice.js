@@ -204,15 +204,233 @@ async function buildDocument(booking, kind) {
   return pdfDoc.save();
 }
 
+// A printed-ticket style receipt (address/phone/email header, blank-line
+// fields, signature lines at the bottom) — a distinct visual template from
+// buildDocument()'s app-style receipt, for drivers who want something that
+// looks like a physical trip ticket to hand or email to a walk-in customer.
+async function buildTicketDocument(data) {
+  const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const W = 380, H = 560, M = 26;
+  const page = pdfDoc.addPage([W, H]);
+
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const c = (rgbArr) => rgb(rgbArr[0], rgbArr[1], rgbArr[2]);
+
+  const iconBytes = await fetchBytes('./assets/favicon.png');
+  const icon = await pdfDoc.embedPng(iconBytes);
+
+  const text = (str, x, yPos, opts = {}) => {
+    page.drawText(String(str), {
+      x, y: yPos, size: opts.size || 11, font: opts.font || regular,
+      color: c(opts.color || COCOA_DARK)
+    });
+  };
+  const rightText = (str, rightX, yPos, opts = {}) => {
+    const size = opts.size || 11;
+    const font = opts.font || regular;
+    const w = font.widthOfTextAtSize(String(str), size);
+    text(str, rightX - w, yPos, opts);
+  };
+  const line = (yPos, opts = {}) => {
+    page.drawLine({
+      start: { x: M, y: yPos }, end: { x: W - M, y: yPos },
+      thickness: opts.thickness || 0.7, color: c(HAIRLINE), opacity: opts.opacity || 0.15
+    });
+  };
+
+  // Ticket border, echoing a physical paper ticket
+  page.drawRectangle({ x: 10, y: 10, width: W - 20, height: H - 20, borderColor: c(HAIRLINE), borderWidth: 1.2, borderOpacity: 0.35 });
+
+  let y = H - M - 8;
+
+  const iconSize = 26;
+  page.drawImage(icon, { x: M, y: y - iconSize + 6, width: iconSize, height: iconSize });
+  text('OnTyme', M + iconSize + 8, y - iconSize + 14, { size: 17, font: bold, color: CHOCOLATE });
+  rightText('TRIP TICKET', W - M, y - 6, { size: 10, font: bold, color: TEAL_DARK });
+  y -= iconSize + 16;
+
+  text('Address: ' + (data.companyAddress || 'Lagos, Nigeria'), M, y, { size: 8.5, color: COCOA_500 });
+  y -= 13;
+  text('Phone: ' + (data.companyPhone || '—'), M, y, { size: 8.5, color: COCOA_500 });
+  y -= 13;
+  text('Email: ' + (data.companyEmail || '—'), M, y, { size: 8.5, color: COCOA_500 });
+  y -= 18;
+  line(y);
+  y -= 22;
+
+  text('Ref: ' + data.bookingRef, M, y, { size: 9, font: bold, color: COCOA_500 });
+  y -= 28;
+
+  const fieldRow = (label, value) => {
+    text(label.toUpperCase(), M, y, { size: 8, font: bold, color: COCOA_500 });
+    y -= 15;
+    text(value || '—', M, y, { size: 12.5, color: COCOA_DARK });
+    y -= 10;
+    line(y);
+    y -= 20;
+  };
+  const twoCol = (labelA, valueA, labelB, valueB) => {
+    const colX = M + (W - M * 2) / 2 + 8;
+    text(labelA.toUpperCase(), M, y, { size: 8, font: bold, color: COCOA_500 });
+    text(labelB.toUpperCase(), colX, y, { size: 8, font: bold, color: COCOA_500 });
+    y -= 15;
+    text(valueA || '—', M, y, { size: 12.5, color: COCOA_DARK });
+    text(valueB || '—', colX, y, { size: 12.5, color: COCOA_DARK });
+    y -= 10;
+    line(y);
+    y -= 20;
+  };
+
+  twoCol('Date', data.date, 'Time', data.time);
+  fieldRow("Passenger's name", data.customerName);
+  fieldRow('Phone no.', data.customerPhone);
+  fieldRow("Driver's name", data.driverName);
+  fieldRow('Pickup location', data.pickup);
+  fieldRow('Destination', data.destination);
+
+  text('AMOUNT PAID', M, y, { size: 8, font: bold, color: COCOA_500 });
+  y -= 24;
+  text(pdfNaira(data.agreedFare), M, y, { size: 22, font: bold, color: TEAL_DARK });
+  y -= 26;
+  line(y, { thickness: 1, opacity: 0.2 });
+  y -= 34;
+
+  const sigW = (W - M * 2 - 24) / 2;
+  page.drawLine({ start: { x: M, y }, end: { x: M + sigW, y }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
+  page.drawLine({ start: { x: M + sigW + 24, y }, end: { x: W - M, y }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
+  y -= 12;
+  text("Passenger's signature / date", M, y, { size: 7.5, color: COCOA_500 });
+  text('Driver / vendor signature', M + sigW + 24, y, { size: 7.5, color: COCOA_500 });
+
+  return pdfDoc.save();
+}
+
+// A4 print sheet holding two identical BLANK ticket panels (labels only, no
+// data) stacked with a cut line between them — meant to be bulk-printed as
+// paper stock that the driver fills in by hand at the moment a ticket is
+// issued, since one sheet gets printed many times over. PDF page geometry is
+// physical points (1/72"), not pixels, so true A4 (595.28 x 841.89pt) prints
+// at the correct real-world size regardless of screen DPI.
+async function buildBlankTicketSheet(companyInfo) {
+  const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const PAGE = [595.28, 841.89];
+  const page = pdfDoc.addPage(PAGE);
+  const [W, H] = PAGE;
+  const M = 24;
+
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const italic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+  const c = (rgbArr) => rgb(rgbArr[0], rgbArr[1], rgbArr[2]);
+
+  const iconBytes = await fetchBytes('./assets/favicon.png');
+  const icon = await pdfDoc.embedPng(iconBytes);
+
+  const gap = 24;
+  const panelH = (H - M * 2 - gap) / 2;
+  const panelTops = [H - M, H - M - panelH - gap];
+
+  function drawPanel(top) {
+    const innerW = W - M * 2;
+    page.drawRectangle({ x: M, y: top - panelH, width: innerW, height: panelH, borderColor: c(HAIRLINE), borderWidth: 1.2, borderOpacity: 0.35 });
+
+    let y = top - 16;
+    const text = (str, x, yPos, opts = {}) => {
+      page.drawText(String(str), { x, y: yPos, size: opts.size || 9, font: opts.font || regular, color: c(opts.color || COCOA_DARK) });
+    };
+    const rightText = (str, rightX, yPos, opts = {}) => {
+      const size = opts.size || 9; const font = opts.font || regular;
+      const w = font.widthOfTextAtSize(String(str), size);
+      text(str, rightX - w, yPos, opts);
+    };
+    const blankRow = (label, xStart, xEnd, yPos) => {
+      text(label, xStart, yPos, { size: 8.5, font: bold, color: COCOA_500 });
+      const labelW = bold.widthOfTextAtSize(label, 8.5) + 6;
+      page.drawLine({ start: { x: xStart + labelW, y: yPos - 2 }, end: { x: xEnd, y: yPos - 2 }, thickness: 0.7, color: c(HAIRLINE), opacity: 0.5 });
+    };
+
+    const iconSize = 22;
+    page.drawImage(icon, { x: M + 14, y: y - iconSize + 6, width: iconSize, height: iconSize });
+    text('OnTyme', M + 14 + iconSize + 8, y - iconSize + 13, { size: 15, font: bold, color: CHOCOLATE });
+    rightText('TRIP TICKET', W - M - 14, y - 6, { size: 9, font: bold, color: TEAL_DARK });
+    y -= iconSize + 14;
+
+    text('Address: Lagos, Nigeria', M + 14, y, { size: 8, color: COCOA_500 });
+    y -= 11;
+    text('Phone: ' + (companyInfo.companyPhone || '—'), M + 14, y, { size: 8, color: COCOA_500 });
+    y -= 11;
+    text('Email: ' + (companyInfo.companyEmail || '—'), M + 14, y, { size: 8, color: COCOA_500 });
+    y -= 16;
+
+    const midX = M + 14 + (innerW - 28) / 2 + 8;
+    const rightEdge = W - M - 14;
+
+    blankRow('REF NO.', M + 14, rightEdge, y);
+    y -= 20;
+    blankRow('DATE', M + 14, midX - 8, y);
+    blankRow('TIME', midX, rightEdge, y);
+    y -= 20;
+    blankRow("PASSENGER'S NAME", M + 14, rightEdge, y);
+    y -= 20;
+    blankRow('PHONE NO.', M + 14, rightEdge, y);
+    y -= 20;
+    blankRow("DRIVER'S NAME", M + 14, rightEdge, y);
+    y -= 20;
+    blankRow('PICKUP LOCATION', M + 14, rightEdge, y);
+    y -= 20;
+    blankRow('DESTINATION', M + 14, rightEdge, y);
+    y -= 20;
+    blankRow('AMOUNT PAID (₦)', M + 14, rightEdge, y);
+    y -= 30;
+
+    const sigW = (innerW - 28 - 24) / 2;
+    page.drawLine({ start: { x: M + 14, y }, end: { x: M + 14 + sigW, y }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
+    page.drawLine({ start: { x: M + 14 + sigW + 24, y }, end: { x: rightEdge, y }, thickness: 1, color: c(HAIRLINE), opacity: 0.4 });
+    y -= 11;
+    text("Passenger's signature / date", M + 14, y, { size: 7, color: COCOA_500 });
+    text('Driver / vendor signature', M + 14 + sigW + 24, y, { size: 7, color: COCOA_500 });
+  }
+
+  drawPanel(panelTops[0]);
+  drawPanel(panelTops[1]);
+
+  const cutY = panelTops[1] + gap / 2;
+  for (let x = M; x < W - M; x += 10) {
+    page.drawLine({ start: { x, y: cutY }, end: { x: Math.min(x + 5, W - M), y: cutY }, thickness: 0.75, color: c(HAIRLINE), opacity: 0.5 });
+  }
+  page.drawText('cut here', { x: W / 2 - italic.widthOfTextAtSize('cut here', 7) / 2, y: cutY + 3, size: 7, font: italic, color: c(COCOA_500) });
+
+  return pdfDoc.save();
+}
+
+// Builds the blank print sheet and triggers a browser download directly —
+// unlike the other documents, this one isn't tied to a transaction, so there's
+// nothing to upload to Supabase or index in Firestore.
+export async function buildAndDownloadBlankTicketSheet(companyInfo) {
+  const bytes = await buildBlankTicketSheet(companyInfo || {});
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'OnTyme Blank Tickets (A4).pdf';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+}
+
 // Generates the PDF, uploads it to Supabase Storage, and returns its public download URL.
 export async function generateAndUploadDocument(booking, kind) {
-  const bytes = await buildDocument(booking, kind);
-  const bucket = kind === 'receipt' ? 'ontyme-receipts' : 'ontyme-invoices';
+  const bytes = kind === 'ticket' ? await buildTicketDocument(booking) : await buildDocument(booking, kind);
+  const bucket = kind === 'invoice' ? 'ontyme-invoices' : 'ontyme-receipts';
   // Storage path stays keyed on the booking id (guaranteed unique, avoids
   // overwrites) — the friendly name below is only what the browser shows
   // when someone downloads it, set via Supabase's `download` option.
   const path = booking.id + '.pdf';
-  const label = kind === 'receipt' ? 'Receipt' : 'Invoice';
+  const label = kind === 'invoice' ? 'Invoice' : (kind === 'ticket' ? 'Ticket' : 'Receipt');
   const dateLabel = booking.date || new Date().toISOString().slice(0, 10);
   const downloadName = 'OnTyme ' + label + ' (' + dateLabel + ').pdf';
 
@@ -271,16 +489,17 @@ function ensureEmailJsInit() {
 // customer. Silently does nothing if they didn't give an email at booking
 // time — this is a nice-to-have on top of the WhatsApp notification and the
 // in-app download, not the only way to get the document.
-export async function emailDocumentLink(booking, kind, downloadUrl) {
-  if (!booking.customerEmail) return;
+export async function emailDocumentLink(booking, kind, downloadUrl, overrideEmail) {
+  const toEmail = overrideEmail || booking.customerEmail;
+  if (!toEmail) return;
   ensureEmailJsInit();
 
   const amount = kind === 'receipt' ? (booking.agreedFare || 0) : (booking.agreedFare || booking.fareHigh || 0);
 
   await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-    to_email: booking.customerEmail,
+    to_email: toEmail,
     customer_name: booking.customerName || 'there',
-    doc_type: kind === 'receipt' ? 'Receipt' : 'Invoice',
+    doc_type: kind === 'receipt' ? 'Receipt' : (kind === 'ticket' ? 'Ticket' : 'Invoice'),
     booking_ref: booking.bookingRef || booking.id,
     pickup: booking.pickup || '',
     destination: booking.destination || '',

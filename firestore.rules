@@ -51,6 +51,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Atomic sequence counters the driver draws from — currently just the
+    // reference number handwritten onto a bulk-printed blank paper ticket
+    // before it's handed to a customer. Driver-only, both ways.
+    match /counters/{counterId} {
+      allow read, write: if isDriver();
+    }
+
     // One-time "confirm your information" profile, set after email OTP
     // verification. A customer can only see/write their own.
     match /customers/{uid} {

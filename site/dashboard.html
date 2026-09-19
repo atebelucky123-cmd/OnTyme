@@ -73,6 +73,17 @@
           <svg class="console-nav-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
         </button>
 
+        <button type="button" class="console-nav-card" data-go="ticket">
+          <div class="console-nav-icon amber-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2M13 11v2M13 17v2"></path></svg>
+          </div>
+          <div class="console-nav-text">
+            <div class="title">Manual receipts</div>
+            <div class="desc">Print blank tickets to bulk-print, or log one you've already issued.</div>
+          </div>
+          <svg class="console-nav-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
+        </button>
+
         <button type="button" class="console-nav-card" data-go="documents">
           <div class="console-nav-icon teal-icon">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 13h6M9 17h6"></path></svg>
@@ -185,6 +196,65 @@
     </div>
   </div>
 
+  <!-- ===================== MANUAL TICKET ===================== -->
+  <div id="view-ticket" class="console-view" hidden>
+    <div class="console-shell console-shell-narrow">
+      <button type="button" class="console-back" data-go="home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg>Home
+      </button>
+      <h1 class="console-h1">Manual receipts</h1>
+      <p class="sub">Print blank paper tickets to hand out and fill in by hand, then log each one here afterwards so it's searchable later.</p>
+
+      <div class="manual-receipt-card">
+        <h2 class="console-h2">Print blank tickets</h2>
+        <p class="sub">A print-ready A4 sheet with two blank tickets, cut in half. The passenger and driver fill everything in by hand when a ticket is issued.</p>
+        <button type="button" class="btn btn-teal" id="printBlankTicketsBtn">Download printable tickets (PDF)</button>
+      </div>
+
+      <div class="manual-receipt-card" id="ticketFormCard">
+        <h2 class="console-h2">Record a manual receipt</h2>
+        <p class="sub">After handing out a paper ticket, log what was written on it here — for search and as a digital backup.</p>
+        <form id="ticketForm">
+          <div class="manual-receipt-grid">
+            <div class="field field-full">
+              <label for="tRefNo">Reference no. (as written on the paper ticket)</label>
+              <div style="display:flex;gap:8px">
+                <input id="tRefNo" type="text" required style="flex:1">
+                <button type="button" class="btn btn-secondary" id="tUseNextRefBtn" style="white-space:nowrap">Use next number</button>
+              </div>
+            </div>
+            <div class="field field-full"><label for="tCustomerName">Passenger's name</label><input id="tCustomerName" type="text" required></div>
+            <div class="field"><label for="tCustomerPhone">Phone no.</label><input id="tCustomerPhone" type="tel" required></div>
+            <div class="field"><label for="tDriverName">Driver's name</label><input id="tDriverName" type="text"></div>
+            <div class="field"><label for="tAmount">Amount paid (₦)</label><input id="tAmount" type="number" min="0" required></div>
+            <div class="field field-full"><label for="tPickup">Pickup location</label><input id="tPickup" type="text" required></div>
+            <div class="field field-full"><label for="tDestination">Destination</label><input id="tDestination" type="text" required></div>
+            <div class="field"><label for="tDate">Date</label><input id="tDate" type="date" required></div>
+            <div class="field"><label for="tTime">Time</label><input id="tTime" type="time"></div>
+          </div>
+          <button type="submit" class="btn btn-teal" style="margin-top:20px">Save record</button>
+        </form>
+      </div>
+
+      <div class="manual-receipt-card" id="ticketResultCard" hidden>
+        <h2 class="console-h2">Record saved</h2>
+        <p class="sub">Send a digital copy to the client's email, download it, or both.</p>
+
+        <div class="field" style="max-width:360px">
+          <label for="tSendEmail">Client's email</label>
+          <input id="tSendEmail" type="email" placeholder="client@email.com">
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px">
+          <button type="button" class="btn btn-teal" id="ticketSendBtn">Send to client's email</button>
+          <a class="btn btn-secondary" id="ticketDownloadBtn" href="#" target="_blank" rel="noopener">Download</a>
+        </div>
+        <span class="console-dim" id="ticketSendStatus" style="display:block;margin-top:10px;font-size:14px"></span>
+
+        <button type="button" class="link-btn" id="ticketAnotherBtn" style="margin-top:20px">Record another</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== PROFILE ===================== -->
   <div id="view-profile" class="console-view" hidden>
     <div class="console-shell console-shell-narrow">
@@ -236,9 +306,9 @@
 
 <script type="module">
   import {
-    auth, db, doc, getDoc, updateDoc, collection, getDocs, orderBy, query, serverTimestamp, signOut
+    auth, db, doc, getDoc, updateDoc, collection, getDocs, orderBy, query, serverTimestamp, signOut, runTransaction
   } from './firebase.js';
-  import { generateAndUploadDocument, emailDocumentLink } from './invoice.js';
+  import { generateAndUploadDocument, emailDocumentLink, buildAndDownloadBlankTicketSheet } from './invoice.js';
   import { formatNaira } from './pricing.js';
 
   const gate = document.getElementById('gate');
@@ -252,6 +322,7 @@
   let allBookings = [];
   let activeTab = 'REQUESTED';
   let driverProfile = {};
+  let currentUser = null;
   const TABS = [
     { key: 'REQUESTED', label: 'Pending' },
     { key: 'CONFIRMED', label: 'Confirmed' },
@@ -260,7 +331,7 @@
   ];
 
   // ---------- View routing ----------
-  const VIEWS = ['home', 'bookings', 'receipt', 'documents', 'profile'];
+  const VIEWS = ['home', 'bookings', 'receipt', 'ticket', 'documents', 'profile'];
   function goView(name) {
     VIEWS.forEach(function (v) {
       document.getElementById('view-' + v).hidden = (v !== name);
@@ -268,6 +339,10 @@
     document.getElementById('notifDropdown').hidden = true;
     window.scrollTo({ top: 0 });
     if (name === 'documents') loadDocuments();
+    if (name === 'ticket') {
+      const dn = document.getElementById('tDriverName');
+      if (dn && !dn.value) dn.value = driverProfile.driverName || '';
+    }
   }
   document.querySelectorAll('[data-go]').forEach(function (el) {
     el.addEventListener('click', function () { goView(el.getAttribute('data-go')); });
@@ -311,6 +386,7 @@
     }
 
     driverProfile = configSnap.data();
+    currentUser = user;
     body.hidden = false;
     document.getElementById('consoleHeaderRight').hidden = false;
     renderHome();
@@ -630,13 +706,13 @@
     });
   });
 
-  function generateManualRef() {
+  function generateManualRef(prefix) {
     var now = new Date();
     var yy = String(now.getFullYear()).slice(2);
     var mm = String(now.getMonth() + 1).padStart(2, '0');
     var dd = String(now.getDate()).padStart(2, '0');
     var n = String(Math.floor(Math.random() * 900) + 100);
-    return 'OT-M-' + yy + mm + dd + '-' + n;
+    return (prefix || 'OT-M-') + yy + mm + dd + '-' + n;
   }
 
   document.getElementById('manualReceiptForm').addEventListener('submit', async function (e) {
@@ -675,6 +751,110 @@
     }
     submitBtn.disabled = false;
     submitBtn.textContent = 'Generate receipt';
+  });
+
+  // ---------- Manual ticket generator (printed-ticket template, separate email/download step) ----------
+  let lastTicketBooking = null;
+  let lastTicketUrl = null;
+
+  document.getElementById('printBlankTicketsBtn').addEventListener('click', async function () {
+    const btn = this;
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Preparing…';
+    try {
+      await buildAndDownloadBlankTicketSheet({
+        companyPhone: driverProfile.driverPhone || '+234 803 519 1966',
+        companyEmail: 'ontymerides@gmail.com'
+      });
+    } catch (err) {
+      alert('Could not generate the print sheet: ' + err.message);
+    }
+    btn.disabled = false;
+    btn.textContent = original;
+  });
+
+  document.getElementById('tUseNextRefBtn').addEventListener('click', async function () {
+    const btn = this;
+    btn.disabled = true;
+    try {
+      const next = await runTransaction(db, async function (tx) {
+        const counterRef = doc(db, 'counters', 'manualTicket');
+        const snap = await tx.get(counterRef);
+        const current = snap.exists() && snap.data().next ? snap.data().next : 1;
+        tx.set(counterRef, { next: current + 1 }, { merge: true });
+        return current;
+      });
+      document.getElementById('tRefNo').value = 'OT-M-' + String(next).padStart(5, '0');
+    } catch (err) {
+      alert('Could not get the next reference number: ' + err.message);
+    }
+    btn.disabled = false;
+  });
+
+  document.getElementById('ticketForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving…';
+
+    const ticketBooking = {
+      id: 'manual-ticket-' + Date.now(),
+      bookingRef: document.getElementById('tRefNo').value.trim(),
+      customerName: document.getElementById('tCustomerName').value.trim(),
+      customerPhone: document.getElementById('tCustomerPhone').value.trim(),
+      driverName: document.getElementById('tDriverName').value.trim(),
+      pickup: document.getElementById('tPickup').value.trim(),
+      destination: document.getElementById('tDestination').value.trim(),
+      date: document.getElementById('tDate').value,
+      time: document.getElementById('tTime').value,
+      agreedFare: Number(document.getElementById('tAmount').value) || 0,
+      companyPhone: driverProfile.driverPhone || '+234 803 519 1966',
+      companyEmail: 'ontymerides@gmail.com'
+    };
+
+    try {
+      const url = await generateAndUploadDocument(ticketBooking, 'ticket');
+      lastTicketBooking = ticketBooking;
+      lastTicketUrl = url;
+      document.getElementById('ticketDownloadBtn').href = url;
+      document.getElementById('ticketSendStatus').textContent = '';
+      document.getElementById('tSendEmail').value = '';
+      document.getElementById('ticketFormCard').hidden = true;
+      document.getElementById('ticketResultCard').hidden = false;
+    } catch (err) {
+      alert('Could not save record: ' + err.message);
+    }
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save record';
+  });
+
+  document.getElementById('ticketSendBtn').addEventListener('click', async function () {
+    const btn = this;
+    const email = document.getElementById('tSendEmail').value.trim();
+    const statusEl = document.getElementById('ticketSendStatus');
+    if (!email) { statusEl.textContent = "Enter the client's email first."; return; }
+    if (!lastTicketBooking || !lastTicketUrl) return;
+    btn.disabled = true;
+    statusEl.textContent = 'Sending…';
+    try {
+      await emailDocumentLink(lastTicketBooking, 'ticket', lastTicketUrl, email);
+      statusEl.textContent = 'Sent to ' + email + '.';
+    } catch (err) {
+      statusEl.textContent = 'Could not send: ' + err.message;
+    }
+    btn.disabled = false;
+  });
+
+  document.getElementById('ticketAnotherBtn').addEventListener('click', function () {
+    document.getElementById('ticketForm').reset();
+    document.getElementById('tDriverName').value = driverProfile.driverName || '';
+    document.getElementById('tSendEmail').value = '';
+    document.getElementById('ticketSendStatus').textContent = '';
+    lastTicketBooking = null;
+    lastTicketUrl = null;
+    document.getElementById('ticketResultCard').hidden = true;
+    document.getElementById('ticketFormCard').hidden = false;
   });
 
   // ---------- Receipts & invoices (searchable document index) ----------
@@ -730,7 +910,7 @@
               '<span>' + sourceTag + '</span>' +
             '</div>' +
           '</div>' +
-          '<span class="status-badge status-' + (d.kind === 'receipt' ? 'COMPLETED' : 'CONFIRMED') + '">' + (d.kind === 'receipt' ? 'Receipt' : 'Invoice') + '</span>' +
+          '<span class="status-badge status-' + (d.kind === 'invoice' ? 'CONFIRMED' : 'COMPLETED') + '">' + (d.kind === 'invoice' ? 'Invoice' : (d.kind === 'ticket' ? 'Ticket' : 'Receipt')) + '</span>' +
         '</div>' +
         '<div class="booking-card-actions"><a class="btn btn-secondary" href="' + d.url + '" target="_blank" rel="noopener">Download</a></div>' +
       '</div>';
